@@ -21,6 +21,7 @@ const auditRoute = require('./routes/audit.route');
 
 const adminUsersRoute = require('./routes/adminUsers.route');
 const locationsRoute = require('./routes/locations.route');
+const schedulesRoute = require('./routes/schedules.route');
 
 const authRoute = require('./routes/auth.route');
 const { errorController } = require('./controllers/errors.controller');
@@ -49,6 +50,7 @@ app.listen(port, () => {
 
     app.use('/admins', adminUsersRoute);
     app.use('/locations', locationsRoute);
+    app.use('/schedules', schedulesRoute);
 
     // app.use('/products', tilesRoute);
     app.use('/normal-customers', normalCustomersRoute);
