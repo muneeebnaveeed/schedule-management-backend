@@ -16,8 +16,6 @@ module.exports.registerUser = catchAsync(async function (req, res, next) {
 module.exports.loginUser = catchAsync(async function (req, res, next) {
     const body = _.pick(req.body, ['username', 'password']);
 
-    console.log(body);
-
     if (Object.keys(body).length < 2) return next(new AppError('Please enter username and password', 400));
 
     const user = await Model.findOne({ username: body.username });
