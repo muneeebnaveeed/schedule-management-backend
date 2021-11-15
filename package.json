@@ -1,0 +1,46 @@
+{
+  "name": "uncle-bear",
+  "version": "0.5.0",
+  "description": "Resturant management system which is capable of managing customers, employees and their salaries, maintain inventory, expenses and capable of generating bill reciept as well as refund bill. It also have capability to show sales and profit/loss report",
+  "main": "app.js",
+  "scripts": {
+    "start": "NODE_ENV=production node app.js",
+    "dev": "NODE_ENV=development nodemon app.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-eslint": "^10.1.0",
+    "eslint": "^7.28.0",
+    "eslint-config-airbnb": "^18.2.1",
+    "eslint-config-prettier": "^6.15.0",
+    "eslint-config-wesbos": "^1.0.1",
+    "eslint-plugin-html": "^6.1.2",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-prettier": "^3.4.0",
+    "eslint-plugin-react": "^7.24.0",
+    "eslint-plugin-react-hooks": "^4.2.0",
+    "prettier": "^2.3.1",
+    "nodemon": "^2.0.7"
+  },
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "cors": "^2.8.5",
+    "dayjs": "^1.10.7",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "json2csv": "^5.0.6",
+    "jsonwebtoken": "^8.5.1",
+    "lodash": "^4.17.21",
+    "mongoose": "^5.12.14",
+    "mongoose-aggregate-paginate-v2": "^1.0.5",
+    "mongoose-paginate-v2": "^1.4.1",
+    "mongoose-type-email": "^1.1.2",
+    "mongoose-unique-validator": "^2.0.3",
+    "util": "^0.12.4"
+  }
+}

@@ -1,0 +1,19 @@
+{
+    "extends": [
+        "wesbos"
+    ],
+    "rules": {
+        "no-unused-vars": "warn",
+        "object-shorthand": "off",
+        "prettier/prettier": [
+            "error",
+            {
+                "trailingComma": "es5",
+                "singleQuote": true,
+                "endOfLine": "auto",
+                "tabWidth": 4,
+                "printWidth": 120
+            }
+        ]
+    }
+}
