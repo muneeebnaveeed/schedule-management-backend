@@ -1,7 +1,6 @@
 {
-  "name": "uncle-bear",
+  "name": "schedule-management",
   "version": "0.5.0",
-  "description": "Resturant management system which is capable of managing customers, employees and their salaries, maintain inventory, expenses and capable of generating bill reciept as well as refund bill. It also have capability to show sales and profit/loss report",
   "main": "app.js",
   "scripts": {
     "start": "NODE_ENV=production node app.js",
@@ -41,6 +40,7 @@
     "mongoose-paginate-v2": "^1.4.1",
     "mongoose-type-email": "^1.1.2",
     "mongoose-unique-validator": "^2.0.3",
+    "saslprep": "^1.0.3",
     "util": "^0.12.4"
   }
 }
