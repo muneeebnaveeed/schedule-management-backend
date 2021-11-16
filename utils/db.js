@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 module.exports = class Database {
     constructor() {
-        console.log('Created instance of BD');
+        console.log('Created instance of DB');
         this.authString = process.env.DB_CONNECTION_STRING;
     }
 

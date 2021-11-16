@@ -19,6 +19,24 @@ module.exports.register = catchAsync(async function (req, res, next) {
     res.status(200).json();
 });
 
+module.exports.approve = catchAsync(async function (req, res, next) {
+    const { userid, locationid } = req.body;
+
+    if (!userid || !mongoose.isValidObjectId(userid)) return next(new AppError('Invalid user id', 400));
+    if (!locationid || !mongoose.isValidObjectId(locationid)) return next(new AppError('Invalid location id', 400));
+
+    const [user, location] = await Promise.all([
+        Model.findOne({ _id: userid }),
+        mongoose.model('Location').findOne({ _id: locationid }),
+    ]);
+    if (!user) return next(new AppError('Invalid user', 401));
+    if (!location) return next(new AppError('Invalid location', 401));
+    user.isConfirmed = true;
+    user.location = locationid;
+    await user.save();
+    res.status(200).json();
+});
+
 module.exports.loginUser = catchAsync(async function (req, res, next) {
     const body = _.pick(req.body, ['username', 'password']);
 

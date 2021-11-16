@@ -7,6 +7,27 @@ const Model = require('../models/employeeUsers.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
+module.exports.loginUser = catchAsync(async function (req, res, next) {
+    const body = _.pick(req.body, ['username', 'password']);
+    if (Object.keys(body).length < 2) return next(new AppError('Please enter username and password', 400));
+
+    const user = await Model.findOne({ username: body.username }, 'name username password');
+
+    if (!user) return next(new AppError('Invalid username or password', 401));
+    const isValidPassword = await user.isValidPassword(body.password, user.password);
+
+    if (!isValidPassword) return next(new AppError('Invalid username or password', 401));
+
+    const token = signToken(user._id);
+
+    const filteredUser = _.pick(user, ['_id', 'name', 'username']);
+
+    res.status(200).json({
+        token,
+        ...filteredUser,
+    });
+});
+
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort, search } = req.query;
 
@@ -37,6 +58,14 @@ module.exports.getOne = catchAsync(async function (req, res, next) {
     res.status(200).json(doc);
 });
 
+module.exports.register = catchAsync(async function (req, res, next) {
+    const newUser = _.pick(req.body, ['name', 'username', 'password', 'passwordConfirm']);
+    if (!Object.keys(newUser).length) return next(new AppError('Please enter a valid user', 400));
+    await Model.create(newUser);
+
+    res.status(200).json();
+});
+
 module.exports.inviteEmployee = catchAsync(async function (req, res, next) {
     const newUser = _.pick(req.body, ['username', 'name']);
 
@@ -54,34 +83,10 @@ module.exports.setPassword = catchAsync(async function (req, res, next) {
 
     if (!user) return next(new AppError('Employee does not exist', 404));
 
-    user.isConfirmed = true;
     user.password = req.body.password;
     await user.save();
 
     res.status(200).send();
-});
-
-module.exports.loginUser = catchAsync(async function (req, res, next) {
-    const body = _.pick(req.body, ['username', 'password']);
-
-    if (Object.keys(body).length < 2) return next(new AppError('Please enter username and password', 400));
-
-    const user = await Model.findOne({ username: body.username });
-
-    if (!user) return next(new AppError('Invalid username or password', 401));
-
-    const isValidPassword = await user.isValidPassword(body.password, user.password);
-
-    if (!isValidPassword) return next(new AppError('Invalid username or password', 401));
-
-    const token = signToken(user._id);
-
-    const filteredUser = _.pick(user, ['_id', 'name', 'username']);
-
-    res.status(200).json({
-        token,
-        ...filteredUser,
-    });
 });
 
 module.exports.remove = catchAsync(async function (req, res, next) {

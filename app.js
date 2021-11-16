@@ -6,7 +6,6 @@ const cors = require('cors');
 const Database = require('./utils/db');
 const AppError = require('./utils/AppError');
 
-const managerUsersRoute = require('./routes/managerUsers.route');
 const normalCustomersRoute = require('./routes/normalCustomers.route');
 const vipCustomersRoute = require('./routes/vipCustomers.route');
 const shopsRoute = require('./routes/shops.route');
@@ -23,6 +22,8 @@ const auditRoute = require('./routes/audit.route');
 const adminUsersRoute = require('./routes/adminUsers.route');
 const locationsRoute = require('./routes/locations.route');
 const schedulesRoute = require('./routes/schedules.route');
+const managerUsersRoute = require('./routes/managerUsers.route');
+const employeeUsersRoute = require('./routes/employeeUsers.route');
 
 const authRoute = require('./routes/auth.route');
 const { errorController } = require('./controllers/errors.controller');
@@ -53,21 +54,22 @@ app.listen(port, () => {
     app.use('/locations', locationsRoute);
     app.use('/schedules', schedulesRoute);
     app.use('/managers', managerUsersRoute);
+    app.use('/employees', employeeUsersRoute);
 
     // app.use('/products', tilesRoute);
-    app.use('/normal-customers', normalCustomersRoute);
-    app.use('/vip-customers', vipCustomersRoute);
-    app.use('/shops', shopsRoute);
-    app.use('/product-groups', productGroupsRoute);
-    app.use('/products', productsRoute);
-    app.use('/raw-material-expenses', rawMaterialExpensesRoute);
-    app.use('/shop-expenses', shopExpensesRoute);
-    app.use('/salaries', salariesExpensesRoute);
-    app.use('/employees', employeesRoute);
-    app.use('/inventories', inventoriesRoute);
-    app.use('/bills', billsRoute);
-    app.use('/audit', auditRoute);
-    app.use('/auth', authRoute);
+    // app.use('/normal-customers', normalCustomersRoute);
+    // app.use('/vip-customers', vipCustomersRoute);
+    // app.use('/shops', shopsRoute);
+    // app.use('/product-groups', productGroupsRoute);
+    // app.use('/products', productsRoute);
+    // app.use('/raw-material-expenses', rawMaterialExpensesRoute);
+    // app.use('/shop-expenses', shopExpensesRoute);
+    // app.use('/salaries', salariesExpensesRoute);
+    // app.use('/employees', employeesRoute);
+    // app.use('/inventories', inventoriesRoute);
+    // app.use('/bills', billsRoute);
+    // app.use('/audit', auditRoute);
+    // app.use('/auth', authRoute);
 
     app.use('*', (req, res, next) => next(new AppError(`Cannot find ${req.originalUrl} on the server!`, 404)));
 

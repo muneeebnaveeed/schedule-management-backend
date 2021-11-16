@@ -43,7 +43,6 @@ const schema = new mongoose.Schema({
 });
 schema.plugin(mongoosePagiante);
 schema.plugin(uniqueValidator, { message: 'User with the {PATH} of {VALUE} already exists' });
-
 const encryptPassword = async function (password) {
     const encryptedPassword = await bcrypt.hash(password, 8);
     return encryptedPassword;
@@ -57,7 +56,6 @@ schema.pre('save', async function (next) {
 
     this.password = password;
     this.passwordConfirm = undefined;
-
     next();
 });
 
