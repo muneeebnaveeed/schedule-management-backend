@@ -6,6 +6,7 @@ const cors = require('cors');
 const Database = require('./utils/db');
 const AppError = require('./utils/AppError');
 
+const managerUsersRoute = require('./routes/managerUsers.route');
 const normalCustomersRoute = require('./routes/normalCustomers.route');
 const vipCustomersRoute = require('./routes/vipCustomers.route');
 const shopsRoute = require('./routes/shops.route');
@@ -51,6 +52,7 @@ app.listen(port, () => {
     app.use('/admins', adminUsersRoute);
     app.use('/locations', locationsRoute);
     app.use('/schedules', schedulesRoute);
+    app.use('/managers', managerUsersRoute);
 
     // app.use('/products', tilesRoute);
     app.use('/normal-customers', normalCustomersRoute);
