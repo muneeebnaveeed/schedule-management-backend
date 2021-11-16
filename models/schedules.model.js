@@ -1,3 +1,4 @@
+const uniqueValidator = require('mongoose-unique-validator');
 const mongoose = require('mongoose');
 const mongoosePagiante = require('mongoose-paginate-v2');
 
@@ -12,12 +13,13 @@ const schema = new mongoose.Schema({
     },
     workDays: {
         type: [String],
-        required: [1, 'Work days are required'],
+        required: [true, 'Work days are required'],
     },
     createdAt: { type: Date, required: true, default: Date.now() },
 });
 
 schema.plugin(mongoosePagiante);
+schema.plugin(uniqueValidator, { message: 'Schedule with the {PATH} of {VALUE} already exists' });
 
 const Model = mongoose.model('Schedule', schema);
 

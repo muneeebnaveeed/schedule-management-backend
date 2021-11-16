@@ -89,6 +89,54 @@ module.exports.setPassword = catchAsync(async function (req, res, next) {
     res.status(200).send();
 });
 
+module.exports.assignManager = catchAsync(async function (req, res, next) {
+    const { employeeid } = req.params;
+    const { managerid } = req.body;
+
+    if (!employeeid || !mongoose.isValidObjectId(employeeid))
+        return next(new AppError('Please enter a valid employee id', 400));
+
+    if (!managerid || !mongoose.isValidObjectId(managerid))
+        return next(new AppError('Please enter a valid manager id', 400));
+
+    const [user, manager] = await Promise.all([
+        Model.findById(employeeid),
+        mongoose.model('ManagerUsers').findById(managerid),
+    ]);
+
+    if (!user) return next(new AppError('Employee does not exist', 404));
+    if (!manager) return next(new AppError('Manager does not exist', 404));
+
+    user.manager = managerid;
+    await user.save();
+
+    res.status(200).send();
+});
+
+module.exports.assignSchedule = catchAsync(async function (req, res, next) {
+    const { employeeid } = req.params;
+    const { scheduleid } = req.body;
+
+    if (!employeeid || !mongoose.isValidObjectId(employeeid))
+        return next(new AppError('Please enter a valid employee id', 400));
+
+    if (!scheduleid || !mongoose.isValidObjectId(scheduleid))
+        return next(new AppError('Please enter a valid schedule id', 400));
+
+    const [user, schedule] = await Promise.all([
+        Model.findById(employeeid),
+        mongoose.model('Schedule').findById(scheduleid),
+    ]);
+
+    if (!user) return next(new AppError('Employee does not exist', 404));
+    if (!schedule) return next(new AppError('Manager does not exist', 404));
+
+    user.schedule = scheduleid;
+    await user.save();
+
+    res.status(200).send();
+});
+
 module.exports.remove = catchAsync(async function (req, res, next) {
     let ids = req.params.id.split(',');
 

@@ -39,6 +39,14 @@ const schema = new mongoose.Schema({
         required: [false, 'Please confirm your password'],
         default: false,
     },
+    manager: {
+        type: mongoose.Types.ObjectId,
+        ref: 'ManagerUsers',
+    },
+    schedule: {
+        type: mongoose.Types.ObjectId,
+        ref: 'Schedule',
+    },
     createdAt: { type: Date, required: true, default: Date.now() },
 });
 schema.plugin(mongoosePagiante);
