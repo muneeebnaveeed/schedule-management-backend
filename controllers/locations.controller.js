@@ -39,12 +39,11 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
 
 module.exports.edit = catchAsync(async function (req, res, next) {
     const { id } = req.params;
-
     if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
 
     const newDoc = _.pick(req.body, ['name', 'coordinates']);
 
-    await Model.findByIdAndUpdate(id, newDoc, { runValidators: true });
+    await Model.findByIdAndUpdate(id, newDoc);
 
     res.status(200).json();
 });

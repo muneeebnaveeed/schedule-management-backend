@@ -38,6 +38,10 @@ const schema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         ref: 'Location',
     },
+    admin: {
+        type: mongoose.Types.ObjectId,
+        ref: 'AdminUser',
+    },
     isConfirmed: {
         type: Boolean,
         required: [false, 'isConfirm is required'],
@@ -78,6 +82,6 @@ schema.methods.changedPasswordAfter = function (timestamp) {
     // FALSE = PASSWORD NOT CHANGED
     return false;
 };
-const Model = mongoose.model('ManagerUsers', schema);
+const Model = mongoose.model('ManagerUser', schema);
 
 module.exports = Model;

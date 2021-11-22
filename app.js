@@ -6,18 +6,19 @@ const cors = require('cors');
 const Database = require('./utils/db');
 const AppError = require('./utils/AppError');
 
-const normalCustomersRoute = require('./routes/normalCustomers.route');
-const vipCustomersRoute = require('./routes/vipCustomers.route');
-const shopsRoute = require('./routes/shops.route');
-const productGroupsRoute = require('./routes/productGroups.route');
-const productsRoute = require('./routes/products.route');
-const rawMaterialExpensesRoute = require('./routes/rawMaterialExpenses.route');
-const shopExpensesRoute = require('./routes/shopExpenses.route');
-const salariesExpensesRoute = require('./routes/salariesExpenses.route');
-const employeesRoute = require('./routes/employees.route');
-const inventoriesRoute = require('./routes/inventories.route');
-const billsRoute = require('./routes/bills.route');
-const auditRoute = require('./routes/audit.route');
+// const normalCustomersRoute = require('./routes/normalCustomers.route');
+// const vipCustomersRoute = require('./routes/vipCustomers.route');
+// const shopsRoute = require('./routes/shops.route');
+// const productGroupsRoute = require('./routes/productGroups.route');
+// const productsRoute = require('./routes/products.route');
+// const rawMaterialExpensesRoute = require('./routes/rawMaterialExpenses.route');
+// const shopExpensesRoute = require('./routes/shopExpenses.route');
+// const salariesExpensesRoute = require('./routes/salariesExpenses.route');
+// const employeesRoute = require('./routes/employees.route');
+// const inventoriesRoute = require('./routes/inventories.route');
+// const billsRoute = require('./routes/bills.route');
+// const auditRoute = require('./routes/audit.route');
+// const authRoute = require('./routes/auth.route');
 
 const adminUsersRoute = require('./routes/adminUsers.route');
 const locationsRoute = require('./routes/locations.route');
@@ -25,7 +26,6 @@ const schedulesRoute = require('./routes/schedules.route');
 const managerUsersRoute = require('./routes/managerUsers.route');
 const employeeUsersRoute = require('./routes/employeeUsers.route');
 
-const authRoute = require('./routes/auth.route');
 const { errorController } = require('./controllers/errors.controller');
 
 const app = express();
