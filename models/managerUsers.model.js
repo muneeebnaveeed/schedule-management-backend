@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const uniqueValidator = require('mongoose-unique-validator');
 
 const mongoosePagiante = require('mongoose-paginate-v2');
+require('mongoose-type-email');
 
 const schema = new mongoose.Schema({
     name: {
@@ -11,12 +12,12 @@ const schema = new mongoose.Schema({
         required: [true, 'Please enter a name'],
         maxlength: [255, 'Only 255 characters are allowed in name'],
     },
-    username: {
-        type: String,
-        required: [true, 'Please enter username'],
-        maxlength: [20, 'Only 20 characters are allowed in username'],
+    email: {
+        type: mongoose.SchemaTypes.Email,
+        allowBlank: true,
         unique: true,
-        uniqueCaseInsensitive: true,
+        lowercase: true,
+        required: [true, 'Please enter email address'],
     },
     password: {
         type: String,
@@ -34,17 +35,12 @@ const schema = new mongoose.Schema({
             message: "Passwords don't match",
         },
     },
-    location: {
-        type: mongoose.Types.ObjectId,
-        ref: 'Location',
-    },
     admin: {
         type: mongoose.Types.ObjectId,
         ref: 'AdminUser',
     },
     isConfirmed: {
         type: Boolean,
-        required: [false, 'isConfirm is required'],
         default: false,
     },
     createdAt: { type: Date, required: true, default: Date.now() },

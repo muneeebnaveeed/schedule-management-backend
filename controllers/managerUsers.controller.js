@@ -12,7 +12,7 @@ const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
 module.exports.register = catchAsync(async function (req, res, next) {
-    const newUser = _.pick(req.body, ['name', 'username', 'password', 'passwordConfirm']);
+    const newUser = _.pick(req.body, ['name', 'email', 'password', 'passwordConfirm']);
     if (!Object.keys(newUser).length) return next(new AppError('Please enter a valid user', 400));
     await Model.create(newUser);
 
@@ -54,17 +54,18 @@ module.exports.approveManager = catchAsync(async function (req, res, next) {
 });
 
 module.exports.loginUser = catchAsync(async function (req, res, next) {
-    const body = _.pick(req.body, ['username', 'password']);
+    const body = _.pick(req.body, ['email', 'password']);
 
-    if (Object.keys(body).length < 2) return next(new AppError('Please enter username and password', 400));
+    if (Object.keys(body).length < 2) return next(new AppError('Please enter email and password', 400));
 
-    const user = await Model.findOne({ username: body.username });
+    const user = await Model.findOne({ email: body.email });
 
-    if (!user) return next(new AppError('Invalid username or password', 401));
+    if (!user) return next(new AppError('Invalid email or password', 401));
+    if (!user.isConfirmed) return next(new AppError('Your access is pending', 403));
 
     const isValidPassword = await user.isValidPassword(body.password, user.password);
 
-    if (!isValidPassword) return next(new AppError('Invalid username or password', 401));
+    if (!isValidPassword) return next(new AppError('Invalid email or password', 401));
 
     if (!user.isConfirmed) return next(new AppError('Your access is pending', 403));
 
@@ -73,7 +74,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
     res.status(200).json({
         token,
         name: user.name,
-        username: user.username,
+        email: user.email,
         _id: user._id,
     });
 });
@@ -83,10 +84,7 @@ module.exports.getUsers = catchAsync(async function (req, res, next) {
 
     const results = await Model.paginate(
         {
-            $or: [
-                { name: { $regex: `${search}`, $options: 'i' } },
-                { username: { $regex: `${search}`, $options: 'i' } },
-            ],
+            $or: [{ name: { $regex: `${search}`, $options: 'i' } }, { email: { $regex: `${search}`, $options: 'i' } }],
         },
         { projection: { __v: 0, password: 0 }, lean: true, page, limit, sort: sort || { isConfirmed: 1 } }
     );
@@ -106,6 +104,24 @@ module.exports.remove = catchAsync(async function (req, res, next) {
     ids = ids.map((id) => mongoose.Types.ObjectId(id));
 
     await Model.deleteMany({ _id: { $in: ids } });
+
+    res.status(200).json();
+});
+module.exports.editUser = catchAsync(async function (req, res, next) {
+    const { id: userId } = req.params;
+
+    const newUser = _.pick(req.body, ['name', 'password', 'passwordConfirm']);
+
+    if (!Object.keys(newUser).length) return next(new AppError('Please enter a valid user', 400));
+    if (!mongoose.isValidObjectId(userId)) return next(new AppError('Please enter a valid id', 400));
+
+    const user = await Model.findById(userId);
+
+    if (!user) return next(new AppError('User does not exist', 404));
+    if (newUser.password) user.password = newUser.password;
+    if (newUser.name) user.name = newUser.name;
+    if (newUser.passwordConfirm) user.passwordConfirm = newUser.passwordConfirm;
+    await user.save();
 
     res.status(200).json();
 });
