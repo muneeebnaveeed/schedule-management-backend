@@ -2,15 +2,17 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const uniqueValidator = require('mongoose-unique-validator');
 const mongoosePagiante = require('mongoose-paginate-v2');
+require('mongoose-type-email');
+
+// mongoose.SchemaTypes.Email.defaults.message = 'Email address is invalid';
 
 const schema = new mongoose.Schema({
-    username: {
-        type: String,
-        required: [true, 'Please enter a username'],
-        maxLength: [25, 'Maximum of 25 characters are allowed'],
+    email: {
+        type: mongoose.SchemaTypes.Email,
+        allowBlank: true,
         unique: true,
-        sparse: true,
-        uniqueCaseInsensitive: true,
+        lowercase: true,
+        required: [true, 'Please enter email address'],
     },
     name: {
         type: String,
@@ -52,7 +54,6 @@ schema.pre('save', async function (next) {
     this.password = password;
     this.passwordConfirm = undefined;
 
-    console.log(this.passwordConfirm);
     next();
 });
 
