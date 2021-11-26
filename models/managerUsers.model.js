@@ -9,24 +9,40 @@ require('mongoose-type-email');
 const schema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, 'Please enter a name'],
+        // required: [true, 'Please enter a name'],
         maxlength: [255, 'Only 255 characters are allowed in name'],
+        required: [
+            function () {
+                return this.isConfirmed === true;
+            },
+            'Please enter a name',
+        ],
     },
     email: {
         type: mongoose.SchemaTypes.Email,
-        allowBlank: true,
         unique: true,
         lowercase: true,
         required: [true, 'Please enter email address'],
     },
     password: {
+        select: false,
         type: String,
-        required: [true, 'Please enter a password'],
+        required: [
+            function () {
+                return this.isConfirmed === true;
+            },
+            'Please enter a password',
+        ],
     },
     passwordConfirm: {
         select: false,
         type: String,
-        required: [true, 'Please confirm your password'],
+        required: [
+            function () {
+                return this.isConfirmed === true;
+            },
+            'Please confirm your password',
+        ],
         validate: {
             // ONLY WORKS ON CREATE AND SAVE
             validator: function (val) {

@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 
 const Database = require('./utils/db');
+const SendGrid = require('./utils/sendGrid');
 const AppError = require('./utils/AppError');
 
 // const normalCustomersRoute = require('./routes/normalCustomers.route');
@@ -25,6 +26,7 @@ const locationsRoute = require('./routes/locations.route');
 const schedulesRoute = require('./routes/schedules.route');
 const managerUsersRoute = require('./routes/managerUsers.route');
 const employeeUsersRoute = require('./routes/employeeUsers.route');
+const groupsRoute = require('./routes/groups.route');
 
 const { errorController } = require('./controllers/errors.controller');
 
@@ -41,6 +43,7 @@ app.listen(port, () => {
         .connect()
         .then(() => console.log('Connected to DB'))
         .catch((err) => console.log(err.message));
+    new SendGrid().setApiKey();
 
     app.use(express.json());
 
@@ -55,6 +58,7 @@ app.listen(port, () => {
     app.use('/schedules', schedulesRoute);
     app.use('/managers', managerUsersRoute);
     app.use('/employees', employeeUsersRoute);
+    app.use('/groups', groupsRoute);
 
     // app.use('/products', tilesRoute);
     // app.use('/normal-customers', normalCustomersRoute);

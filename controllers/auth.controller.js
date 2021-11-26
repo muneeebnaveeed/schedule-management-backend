@@ -45,7 +45,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
 
     if (!user.isConfirmed) return next(new AppError('Your access is pending', 403));
 
-    const token = signToken(user._id);
+    const token = signToken({ id: user._id });
 
     res.status(200).json({
         token,

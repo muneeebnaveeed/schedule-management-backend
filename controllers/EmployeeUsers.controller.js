@@ -18,7 +18,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
 
     if (!isValidPassword) return next(new AppError('Invalid email or password', 401));
 
-    const token = signToken(user._id);
+    const token = signToken({ id: user._id });
 
     const filteredUser = _.pick(user, ['_id', 'name', 'email']);
 
