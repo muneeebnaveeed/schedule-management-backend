@@ -36,7 +36,6 @@ const schema = new mongoose.Schema({
     },
     isConfirmed: {
         type: Boolean,
-        required: [false, 'isConfirm is required'],
         default: false,
     },
     // products: { type: [Product.schema], required: true, default: [] },

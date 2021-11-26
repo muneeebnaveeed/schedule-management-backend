@@ -11,13 +11,13 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
     const body = _.pick(req.body, ['email', 'password']);
     if (Object.keys(body).length < 2) return next(new AppError('Please enter email and password', 400));
 
-    const user = await Model.findOne({ email: body.email }, 'name email password');
+    const user = await Model.findOne({ email: body.email }, 'name email password isConfirmed');
 
     if (!user) return next(new AppError('Invalid email or password', 401));
     const isValidPassword = await user.isValidPassword(body.password, user.password);
 
     if (!isValidPassword) return next(new AppError('Invalid email or password', 401));
-
+    if (!user.isConfirmed) return next(new AppError('Your Access is pending', 403));
     const token = signToken({ id: user._id });
 
     const filteredUser = _.pick(user, ['_id', 'name', 'email']);

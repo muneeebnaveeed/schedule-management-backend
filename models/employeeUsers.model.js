@@ -42,6 +42,18 @@ const schema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         ref: 'Schedule',
     },
+    location: {
+        type: mongoose.Types.ObjectId,
+        ref: 'Location',
+    },
+    groups: {
+        type: [mongoose.Types.ObjectId],
+        ref: 'Group',
+    },
+    isConfirmed: {
+        type: Boolean,
+        default: false,
+    },
     createdAt: { type: Date, required: true, default: Date.now() },
 });
 schema.plugin(mongoosePagiante);
