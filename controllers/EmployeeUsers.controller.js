@@ -11,7 +11,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
     const body = _.pick(req.body, ['email', 'password']);
     if (Object.keys(body).length < 2) return next(new AppError('Please enter email and password', 400));
 
-    const user = await Model.findOne({ email: body.email }, 'name email password isConfirmed');
+    const user = await Model.findOne({ email: body.email }, 'name email password isConfirmed isPasswordSet');
 
     if (!user) return next(new AppError('Invalid email or password', 401));
     const isValidPassword = await user.isValidPassword(body.password, user.password);
@@ -20,7 +20,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
     if (!user.isConfirmed) return next(new AppError('Your Access is pending', 403));
     const token = signToken({ id: user._id });
 
-    const filteredUser = _.pick(user, ['_id', 'name', 'email']);
+    const filteredUser = _.pick(user, ['_id', 'name', 'email', 'isPasswordSet']);
 
     res.status(200).json({
         token,
@@ -84,6 +84,7 @@ module.exports.setPassword = catchAsync(async function (req, res, next) {
     if (!user) return next(new AppError('Employee does not exist', 404));
 
     user.password = req.body.password;
+    user.isPasswordSet = true;
     await user.save();
 
     res.status(200).send();

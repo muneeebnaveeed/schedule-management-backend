@@ -54,6 +54,10 @@ const schema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    isPasswordSet: {
+        type: Boolean,
+        default: false,
+    },
     createdAt: { type: Date, required: true, default: Date.now() },
 });
 schema.plugin(mongoosePagiante);
