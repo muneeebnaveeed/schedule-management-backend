@@ -8,6 +8,7 @@ const schema = new mongoose.Schema({
         type: String,
         required: [true, 'Please enter a name'],
         unique: true,
+        lowercase: true,
     },
     createdAt: { type: Date, required: true, default: Date.now() },
 });

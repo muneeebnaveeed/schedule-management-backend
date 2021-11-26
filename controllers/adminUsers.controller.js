@@ -71,9 +71,18 @@ module.exports.inviteManagers = catchAsync(async function (req, res, next) {
     res.status(200).json();
 });
 module.exports.importEmployees = catchAsync(async function (req, res, next) {
+    let groups = [];
+    if (req.query.groups !== 'null') {
+        groups = req.query.groups.split(',');
+        console.log({ groups });
+        for (const group of groups) {
+            if (!mongoose.isValidObjectId(group)) return next(new AppError('Please enter valid id(s)', 400));
+        }
+        groups = groups.map((id) => mongoose.Types.ObjectId(id));
+    }
     const employees = await csv().fromString(req.file.buffer.toString());
     for (const employee of employees) {
-        await mongoose.model('EmployeeUser').create({ ...employee, passwordConfirm: employee.password });
+        await mongoose.model('EmployeeUser').create({ ...employee, passwordConfirm: employee.password, groups });
     }
     res.status(200).json();
 });
