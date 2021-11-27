@@ -14,7 +14,7 @@ const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
-    const { page, limit, sort, search, filters } = req.query;
+    const { page, limit, sort = { _id: 1 }, search, filters } = req.query;
 
     const results = await mongoose.model('User').paginate(
         {
@@ -30,7 +30,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                 },
             ],
         },
-        { projection: { __v: 0, password: 0 }, lean: true, page, limit, sort: { _id: 1, ...sort } }
+        { projection: { __v: 0, password: 0 }, lean: true, page, limit, sort }
     );
 
     res.status(200).json(
@@ -97,6 +97,7 @@ module.exports.inviteManagers = catchAsync(async function (req, res, next) {
 
     res.status(200).json();
 });
+
 module.exports.importEmployees = catchAsync(async function (req, res, next) {
     let groups = [];
     if (req.query.groups !== 'null') {
@@ -119,6 +120,7 @@ module.exports.importEmployees = catchAsync(async function (req, res, next) {
     }
     res.status(200).json();
 });
+
 module.exports.decodeToken = catchAsync(async function (req, res, next) {
     const { token } = req.params;
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
