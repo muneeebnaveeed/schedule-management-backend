@@ -9,23 +9,19 @@ const fs = require('file-system');
 const csv = require('csvtojson');
 const { signToken } = require('../utils/jwt');
 const Model = require('../models/adminUsers.model');
+const User = require('../models/users.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort, search, filters } = req.query;
 
-    const employees = [];
-    const managers = [];
-
-    const results = await Model.paginate(
+    const results = await mongoose.model('User').paginate(
         {
-            $or: [
-                { name: { $regex: `${search}`, $options: 'i' } },
-                { username: { $regex: `${search}`, $options: 'i' } },
-            ],
+            $or: [{ name: { $regex: `${search}`, $options: 'i' } }, { email: { $regex: `${search}`, $options: 'i' } }],
+            // {role}
         },
-        { projection: { __v: 0, password: 0 }, lean: true, page, limit, sort: { isConfirmed: 1, ...sort } }
+        { projection: { __v: 0, password: 0 }, lean: true, page, limit, sort: { _id: 1, ...sort } }
     );
 
     res.status(200).json(
@@ -72,9 +68,9 @@ module.exports.inviteManagers = catchAsync(async function (req, res, next) {
         if (!validator.validate(email)) return next(new AppError('One or more emails are invalid', 400));
     }
     for (const email of emails) {
-        let ManagerUser = await mongoose.model('ManagerUser').findOne({ email }).lean();
+        let ManagerUser = await mongoose.model('User').findOne({ email }).lean();
         if (!ManagerUser)
-            ManagerUser = await mongoose.model('ManagerUser').create({ email, admin: res.locals.user._id });
+            ManagerUser = await mongoose.model('User').create({ email, admin: res.locals.user._id, role: 'MANAGER' });
         const token = signToken({ adminid, managerid: ManagerUser._id });
         await sgMail.send({
             to: email, // Change to your recipient
@@ -104,9 +100,13 @@ module.exports.importEmployees = catchAsync(async function (req, res, next) {
     }
     const employees = await csv().fromString(req.file.buffer.toString());
     for (const employee of employees) {
-        await mongoose
-            .model('EmployeeUser')
-            .create({ ...employee, passwordConfirm: employee.password, groups, admin: res.locals.user._id });
+        await User.create({
+            ...employee,
+            passwordConfirm: employee.password,
+            groups,
+            admin: res.locals.user._id,
+            role: 'EMPLOYEE',
+        });
     }
     res.status(200).json();
 });

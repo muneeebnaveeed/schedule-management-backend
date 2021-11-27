@@ -1,26 +1,46 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const uniqueValidator = require('mongoose-unique-validator');
-// const Product = require('./productsModel');
 const mongoosePagiante = require('mongoose-paginate-v2');
+require('mongoose-type-email');
 
 const schema = new mongoose.Schema({
+    email: {
+        type: mongoose.SchemaTypes.Email,
+        allowBlank: true,
+        unique: true,
+        lowercase: true,
+        required: [true, 'Please enter email address'],
+    },
     name: {
         type: String,
-        required: [true, 'Please enter a name'],
+        required: [
+            function () {
+                return this.isConfirmed === true;
+            },
+            'Please enter a name',
+        ],
         maxLength: [25, 'Maximum of 25 characters are allowed'],
-        unique: true,
-        sparse: true,
-        uniqueCaseInsensitive: true,
     },
     password: {
         type: String,
-        required: [true, 'Please enter a password'],
+        select: false,
+        required: [
+            function () {
+                return this.isConfirmed === true;
+            },
+            'Please enter a password',
+        ],
     },
     passwordConfirm: {
         select: false,
         type: String,
-        required: [true, 'Please confirm your password'],
+        required: [
+            function () {
+                return this.isConfirmed === true;
+            },
+            'Please confirm your password',
+        ],
         validate: {
             // ONLY WORKS ON CREATE AND SAVE
             validator: function (val) {
@@ -29,25 +49,44 @@ const schema = new mongoose.Schema({
             message: "Passwords don't match",
         },
     },
-    passwordChangedAt: Date,
-    role: {
-        type: String,
-        enum: { values: ['MANAGER', 'ADMINISTRATOR'], message: 'Invalid role' },
+    manager: {
+        type: mongoose.Types.ObjectId,
+        ref: 'ManagerUsers',
+    },
+    schedule: {
+        type: mongoose.Types.ObjectId,
+        ref: 'Schedule',
+    },
+    location: {
+        type: mongoose.Types.ObjectId,
+        ref: 'Location',
+    },
+    groups: {
+        type: [mongoose.Types.ObjectId],
+        ref: 'Group',
     },
     isConfirmed: {
         type: Boolean,
         default: false,
     },
-    // products: { type: [Product.schema], required: true, default: [] },
-    createdAt: { type: Date, required: true, default: Date.now() },
-    createdShop: {
+    isPasswordSet: {
+        type: Boolean,
+        default: false,
+    },
+    admin: {
         type: mongoose.Types.ObjectId,
-        ref: 'Shop',
+        ref: 'AdminUser',
+        required: [true, 'Please enter admin'],
+    },
+    createdAt: { type: Date, required: true, default: Date.now() },
+    role: {
+        type: String,
+        enum: ['EMPLOYEE', 'MANAGER'],
+        required: [true, 'Please enter role'],
     },
 });
 schema.plugin(mongoosePagiante);
 schema.plugin(uniqueValidator, { message: 'User with the {PATH} of {VALUE} already exists' });
-
 const encryptPassword = async function (password) {
     const encryptedPassword = await bcrypt.hash(password, 8);
     return encryptedPassword;
@@ -61,24 +100,12 @@ schema.pre('save', async function (next) {
 
     this.password = password;
     this.passwordConfirm = undefined;
-
-    console.log(this.passwordConfirm);
     next();
 });
 
 schema.methods.isValidPassword = async function (password, encryptedPassword) {
     const isValid = await bcrypt.compare(password, encryptedPassword);
     return isValid;
-};
-
-schema.methods.changedPasswordAfter = function (timestamp) {
-    if (this.passwordChangedAt) {
-        const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
-        return timestamp < changedTimestamp;
-    }
-
-    // FALSE = PASSWORD NOT CHANGED
-    return false;
 };
 
 const Model = mongoose.model('User', schema);
