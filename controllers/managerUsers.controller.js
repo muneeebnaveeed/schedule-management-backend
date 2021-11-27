@@ -25,7 +25,7 @@ module.exports.register = catchAsync(async function (req, res, next) {
     manager.name = newUser.name;
     manager.password = newUser.password;
     manager.passwordConfirm = newUser.passwordConfirm;
-
+    manager.isConfirmed = true;
     await manager.save();
     const signedToken = signToken({ id: manager._id });
 
