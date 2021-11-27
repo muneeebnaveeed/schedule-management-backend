@@ -114,5 +114,7 @@ module.exports.decodeToken = catchAsync(async function (req, res, next) {
     const { token } = req.params;
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
     const admin = await mongoose.model('AdminUser').findById(decoded.id, { __v: 0, password: 0 }).lean();
+    if (!admin) return next(new AppError('User does not exist'));
+
     res.status(200).json(admin);
 });

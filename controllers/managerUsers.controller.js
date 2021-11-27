@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { Parser } = require('json2csv');
 const dayjs = require('dayjs');
 const localizedFormat = require('dayjs/plugin/localizedFormat');
+const { promisify } = require('util');
 const { signToken } = require('../utils/jwt');
 
 dayjs.extend(localizedFormat);
@@ -124,4 +125,12 @@ module.exports.editUser = catchAsync(async function (req, res, next) {
     await user.save();
 
     res.status(200).json();
+});
+
+module.exports.decodeToken = catchAsync(async function (req, res, next) {
+    const { token } = req.params;
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    const manager = await mongoose.model('ManagerUser').findById(decoded.id, { __v: 0, password: 0 }).lean();
+    if (!manager) return next(new AppError('User does not exist'));
+    res.status(200).json(manager);
 });
