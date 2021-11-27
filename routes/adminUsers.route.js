@@ -10,6 +10,7 @@ const {
     inviteManagers,
     importEmployees,
     decodeToken,
+    assignManager,
 } = require('../controllers/adminUsers.controller');
 const { protect } = require('../middlewares/protect.middleware');
 const autoParams = require('../utils/autoParams');
@@ -20,6 +21,6 @@ router.post('/invite-managers/admin-id/id/:adminid/manager-email/:emails', prote
 router.post('/import-employees/admin-id/id/:adminid', upload.single('file'), protect, importEmployees);
 router.get('/', autoParams, protect, getAll);
 router.post('/decode/token/:token', decodeToken);
-router.post('/assign/manager/:managerid', protect, decodeToken);
+router.post('/assign/manager/:managerid', protect, assignManager);
 
 module.exports = router;

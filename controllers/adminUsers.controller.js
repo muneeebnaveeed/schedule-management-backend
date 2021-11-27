@@ -12,6 +12,7 @@ const Model = require('../models/adminUsers.model');
 const User = require('../models/users.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
+const { findById } = require('../models/adminUsers.model');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort = { _id: 1 }, search, filters } = req.query;
@@ -128,4 +129,46 @@ module.exports.decodeToken = catchAsync(async function (req, res, next) {
     if (!admin) return next(new AppError('User does not exist'));
 
     res.status(200).json(admin);
+});
+
+module.exports.assignManager = catchAsync(async function (req, res, next) {
+    const adminid = res.locals.user._id;
+    const employeeids = [...new Set(req.body.employeeids)];
+    const { managerid } = req.params;
+    const locationid = req.body.location;
+    if (!locationid || !mongoose.isValidObjectId(locationid))
+        return next(new AppError('Please enter a valid location id', 400));
+
+    const location = await mongoose.model('Location').findById(locationid);
+    if (!location) return next(new AppError('Location does not exist', 404));
+
+    if (!managerid || !mongoose.isValidObjectId(managerid))
+        return next(new AppError('Please enter a valid manager id', 400));
+    const manager = await mongoose.model('User').findById(managerid);
+    if (!manager) return next(new AppError('Manager does not exist', 404));
+    if (manager.role !== 'MANAGER') return next(new AppError('Manager does not exist', 404));
+
+    for (const employeeid of employeeids) {
+        if (!employeeid || !mongoose.isValidObjectId(employeeid))
+            return next(new AppError('Please enter a valid id', 400));
+    }
+    const employees = await mongoose
+        .model('User')
+        .find({
+            _id: {
+                $in: employeeids,
+            },
+            admin: adminid,
+        })
+        .lean();
+    if (employeeids.length !== employees.length) return next(new AppError('Invalid Employees', 400));
+    await mongoose.model('User').updateMany(
+        {
+            _id: {
+                $in: employeeids,
+            },
+        },
+        { manager: managerid, location: locationid }
+    );
+    res.status(200).send();
 });
