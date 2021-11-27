@@ -15,12 +15,27 @@ const AppError = require('../utils/AppError');
 module.exports.register = catchAsync(async function (req, res, next) {
     const { token } = req.body;
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-    console.log({ decoded });
+    const { adminid, managerid } = decoded;
+    const manager = await mongoose.model('User').findById(managerid);
+    if (!manager) return next(new AppError('Manager does not exists', 400));
+    if (manager.admin.toString() !== adminid) return next(new AppError('Invalid Token', 403));
     const newUser = _.pick(req.body, ['name', 'password', 'passwordConfirm']);
     if (!Object.keys(newUser).length) return next(new AppError('Please enter a valid user', 400));
-    // await Model.create(newUser);
 
-    res.status(200).json();
+    manager.name = newUser.name;
+    manager.password = newUser.password;
+    manager.passwordConfirm = newUser.passwordConfirm;
+
+    await manager.save();
+    const signedToken = signToken({ id: manager._id });
+
+    res.status(200).json({
+        token: signedToken,
+        _id: manager._id,
+        name: manager.name,
+        email: manager.email,
+        role: manager.role,
+    });
 });
 
 module.exports.approveUser = catchAsync(async function (req, res, next) {
