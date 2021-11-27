@@ -11,11 +11,13 @@ const {
     importEmployees,
     decodeToken,
     assignManager,
+    remove,
 } = require('../controllers/adminUsers.controller');
 const { protect } = require('../middlewares/protect.middleware');
 const autoParams = require('../utils/autoParams');
 
 router.route('/register').post(registerUser);
+router.route('/id/:id').delete(remove);
 router.route('/login').post(loginUser);
 router.post('/invite-managers/admin-id/id/:adminid/manager-email/:emails', protect, inviteManagers);
 router.post('/import-employees/admin-id/id/:adminid', upload.single('file'), protect, importEmployees);

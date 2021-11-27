@@ -18,7 +18,7 @@ router.post('/approve-user', approveUser);
 router.post('/approve-manager', approveManager);
 router.post('/login', loginUser);
 router.get('/', getUsers);
-router.delete('/id/:id', remove);
+// router.delete('/id/:id', remove);
 router.patch('/id/:id', editUser);
 
 module.exports = router;

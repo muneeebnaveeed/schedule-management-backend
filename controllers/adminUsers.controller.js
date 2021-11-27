@@ -54,7 +54,19 @@ module.exports.registerUser = catchAsync(async function (req, res, next) {
     await Model.create(newUser);
     res.status(200).json();
 });
+module.exports.remove = catchAsync(async function (req, res, next) {
+    let ids = req.params.id.split(',');
 
+    for (const id of ids) {
+        if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter valid id(s)', 400));
+    }
+
+    ids = ids.map((id) => mongoose.Types.ObjectId(id));
+
+    await mongoose.model('User').deleteMany({ _id: { $in: ids } });
+
+    res.status(200).json();
+});
 module.exports.loginUser = catchAsync(async function (req, res, next) {
     const body = _.pick(req.body, ['email', 'password']);
 
