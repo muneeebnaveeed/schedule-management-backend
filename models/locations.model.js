@@ -23,7 +23,11 @@ const schema = new mongoose.Schema({
         },
         required: [true, 'Coordinates are required'],
     },
-
+    admin: {
+        type: mongoose.Types.ObjectId,
+        ref: 'AdminUser',
+        required: [true, 'Please enter admin'],
+    },
     createdAt: { type: Date, required: true, default: Date.now() },
 });
 

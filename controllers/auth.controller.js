@@ -60,7 +60,9 @@ module.exports.protect = catchAsync(async function (req, res, next) {
     let token;
 
     if (req.headers.authorization) {
-        if (req.headers.authorization === 'dev') return next();
+        if (req.headers.authorization === 'dev') {
+            return next();
+        }
 
         if (req.headers.authorization.startsWith('Bearer '))
             // eslint-disable-next-line prefer-destructuring
@@ -71,7 +73,7 @@ module.exports.protect = catchAsync(async function (req, res, next) {
 
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-    const freshUser = await User.findById(decoded.id);
+    const freshUser = await mongoose.model('AdminUser').findById(decoded.id);
 
     if (!freshUser) return next(new AppError('Please login again', 401));
 

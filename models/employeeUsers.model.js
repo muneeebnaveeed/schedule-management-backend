@@ -58,6 +58,11 @@ const schema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    admin: {
+        type: mongoose.Types.ObjectId,
+        ref: 'AdminUser',
+        required: [true, 'Please enter admin'],
+    },
     createdAt: { type: Date, required: true, default: Date.now() },
 });
 schema.plugin(mongoosePagiante);

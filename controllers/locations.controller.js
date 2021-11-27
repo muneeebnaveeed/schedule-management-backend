@@ -6,7 +6,6 @@ const AppError = require('../utils/AppError');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort, search } = req.query;
-
     const results = await Model.paginate(
         {
             name: { $regex: `${search}`, $options: 'i' },
@@ -33,7 +32,7 @@ module.exports.getOne = catchAsync(async function (req, res, next) {
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
     const newDoc = _.pick(req.body, ['name', 'coordinates']);
-    await Model.create(newDoc);
+    await Model.create({ ...newDoc, admin: res.locals.user._id });
     res.status(200).send();
 });
 

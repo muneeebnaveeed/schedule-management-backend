@@ -54,6 +54,7 @@ const schema = new mongoose.Schema({
     admin: {
         type: mongoose.Types.ObjectId,
         ref: 'AdminUser',
+        required: [true, 'Please enter admin'],
     },
     isConfirmed: {
         type: Boolean,

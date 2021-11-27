@@ -9,6 +9,7 @@ const AppError = require('../utils/AppError');
 
 module.exports.loginUser = catchAsync(async function (req, res, next) {
     const body = _.pick(req.body, ['email', 'password']);
+    console.log({ body });
     if (Object.keys(body).length < 2) return next(new AppError('Please enter email and password', 400));
 
     const user = await Model.findOne({ email: body.email }, 'name email password isConfirmed isPasswordSet');
