@@ -12,7 +12,7 @@ const {
 } = require('../controllers/managerUsers.controller');
 const { protect } = require('../middlewares/protect.middleware');
 
-router.post('/register', protect, register);
+router.post('/register', register);
 router.post('/decode/token/:token', decodeToken);
 router.post('/approve-user', approveUser);
 router.post('/approve-manager', approveManager);
