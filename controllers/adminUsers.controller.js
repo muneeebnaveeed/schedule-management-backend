@@ -112,7 +112,7 @@ module.exports.inviteManagers = catchAsync(async function (req, res, next) {
             html: `<body> ${adminUser.name} invited you to be a manager of Schedule Management Application.
             <br/>Please follow the link to continue:
             <br/><br/>
-            <a href="http://schedule-management.com/managers/accept?t=${token}"
+            <a href="https://fyz-schedule-management.herokuapp.com/accept-manager-invitation?token=${token}"
             > Accept Invitation</a>
             </body > `,
         });
