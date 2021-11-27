@@ -12,7 +12,6 @@ const Model = require('../models/adminUsers.model');
 const User = require('../models/users.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
-const { findById } = require('../models/adminUsers.model');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort = { _id: 1 }, search, filters } = req.query;
@@ -28,6 +27,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                 },
                 {
                     role: { $in: filters },
+                    admin: res.locals.user._id,
                 },
             ],
         },
@@ -125,7 +125,6 @@ module.exports.importEmployees = catchAsync(async function (req, res, next) {
     let groups = [];
     if (req.query.groups !== 'null') {
         groups = req.query.groups.split(',');
-        console.log({ groups });
         for (const group of groups) {
             if (!mongoose.isValidObjectId(group)) return next(new AppError('Please enter valid id(s)', 400));
         }
