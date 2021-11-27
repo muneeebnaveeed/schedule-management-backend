@@ -31,7 +31,17 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                 },
             ],
         },
-        { projection: { __v: 0, password: 0 }, lean: true, page, limit, sort }
+        {
+            projection: { __v: 0, password: 0 },
+            populate: [
+                { path: 'manager', select: '_id email name' },
+                { path: 'location', select: '_id name' },
+            ],
+            lean: true,
+            page,
+            limit,
+            sort,
+        }
     );
 
     res.status(200).json(

@@ -51,7 +51,7 @@ const schema = new mongoose.Schema({
     },
     manager: {
         type: mongoose.Types.ObjectId,
-        ref: 'ManagerUsers',
+        ref: 'User',
     },
     schedule: {
         type: mongoose.Types.ObjectId,

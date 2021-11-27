@@ -13,9 +13,12 @@ const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
 module.exports.register = catchAsync(async function (req, res, next) {
-    const newUser = _.pick(req.body, ['name', 'email', 'password', 'passwordConfirm']);
+    const { token } = req.body;
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    console.log({ decoded });
+    const newUser = _.pick(req.body, ['name', 'password', 'passwordConfirm']);
     if (!Object.keys(newUser).length) return next(new AppError('Please enter a valid user', 400));
-    await Model.create(newUser);
+    // await Model.create(newUser);
 
     res.status(200).json();
 });
@@ -130,7 +133,7 @@ module.exports.editUser = catchAsync(async function (req, res, next) {
 module.exports.decodeToken = catchAsync(async function (req, res, next) {
     const { token } = req.params;
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-    const manager = await mongoose.model('ManagerUser').findById(decoded.id, { __v: 0, password: 0 }).lean();
+    const manager = await mongoose.model('User').findById(decoded.id, { __v: 0, password: 0 }).lean();
     if (!manager) return next(new AppError('User does not exist'));
     res.status(200).json(manager);
 });
