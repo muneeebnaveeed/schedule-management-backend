@@ -18,8 +18,17 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 
     const results = await mongoose.model('User').paginate(
         {
-            $or: [{ name: { $regex: `${search}`, $options: 'i' } }, { email: { $regex: `${search}`, $options: 'i' } }],
-            // {role}
+            $and: [
+                {
+                    $or: [
+                        { name: { $regex: `${search}`, $options: 'i' } },
+                        { email: { $regex: `${search}`, $options: 'i' } },
+                    ],
+                },
+                {
+                    role: { $in: filters },
+                },
+            ],
         },
         { projection: { __v: 0, password: 0 }, lean: true, page, limit, sort: { _id: 1, ...sort } }
     );
