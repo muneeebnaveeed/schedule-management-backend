@@ -12,7 +12,9 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
     console.log({ body });
     if (Object.keys(body).length < 2) return next(new AppError('Please enter email and password', 400));
 
-    const user = await Model.findOne({ email: body.email }, 'name email password isConfirmed isPasswordSet');
+    const user = await mongoose
+        .model('User')
+        .findOne({ email: body.email }, 'name email password isConfirmed isPasswordSet');
 
     if (!user) return next(new AppError('Invalid email or password', 401));
     const isValidPassword = await user.isValidPassword(body.password, user.password);
