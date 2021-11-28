@@ -82,7 +82,7 @@ module.exports.setPassword = catchAsync(async function (req, res, next) {
 
     if (!id || !mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid employee id', 400));
 
-    const user = await Model.findById(id);
+    const user = await mongoose.model('User').findById(id);
 
     if (!user) return next(new AppError('Employee does not exist', 404));
 
