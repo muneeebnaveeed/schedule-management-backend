@@ -20,16 +20,13 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
     let token;
     let filteredUser;
     if (admin) {
-        console.log('in admin');
         isValidPassword = await admin.isValidPassword(body.password, admin.password);
         if (!isValidPassword) return next(new AppError('Invalid email or password', 401));
         token = signToken({ id: admin._id });
         filteredUser = { ..._.pick(admin, ['_id', 'name', 'email']), role: 'ADMIN' };
     } else if (manager) {
         if (!manager.isConfirmed) return next(new AppError('Your access is pending', 403));
-        console.log({ manager });
         isValidPassword = await manager.isValidPassword(body.password, manager.password);
-        console.log('in manager');
         if (!isValidPassword) return next(new AppError('Invalid email or password', 401));
 
         token = signToken({ id: manager._id });

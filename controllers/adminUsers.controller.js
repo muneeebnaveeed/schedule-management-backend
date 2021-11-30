@@ -91,19 +91,43 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
 });
 
 module.exports.inviteManagers = catchAsync(async function (req, res, next) {
-    const emails = req.params.emails.split(',');
-    const { adminid } = req.params;
-
-    const adminUser = await Model.findById(adminid).lean();
-    if (!adminUser) return next(new AppError('User does not exist', 404));
+    const emails = [...new Set(req.params.emails.replace(/\s/g, '').split(','))];
+    const adminUser = res.locals.user;
     for (const email of emails) {
         if (!validator.validate(email)) return next(new AppError('One or more emails are invalid', 400));
     }
+
+    const managers = await mongoose.model('User').find({
+        email: {
+            $in: emails,
+        },
+    });
+
+    if (managers.length > 0) return next(new AppError('One or more emails are already in use', 400));
+
+    // for (const email of emails) {
+    //     const token = signToken({ adminid: adminUser._id, managerid: ManagerUser._id });
+
+    //     await Promise.all([
+    //         mongoose.model('User').create({ email, admin: res.locals.user._id, role: 'MANAGER' }),
+    //         sgMail.send({
+    //             to: email, // Change to your recipient
+    //             from: process.env.SENDGRID_SENDER_EMAIL, // Change to your verified sender
+    //             subject: `Schedule Management App Invitation`,
+    //             // text: 'and easy to do anywhere, even with Node.js',
+    //             html: `<body> ${adminUser.name} invited you to be a manager of Schedule Management Application.
+    //             <br/>Please follow the link to continue:
+    //             <br/><br/>
+    //             <a href="https://fyz-schedule-management.herokuapp.com/accept-manager-invitation?token=${token}"
+    //             > Accept Invitation</a>
+    //             </body > `,
+    //         },
+    //     ]);
+    // }
+
     for (const email of emails) {
-        let ManagerUser = await mongoose.model('User').findOne({ email }).lean();
-        if (!ManagerUser)
-            ManagerUser = await mongoose.model('User').create({ email, admin: res.locals.user._id, role: 'MANAGER' });
-        const token = signToken({ adminid, managerid: ManagerUser._id });
+        const ManagerUser = await mongoose.model('User').create({ email, admin: res.locals.user._id, role: 'MANAGER' });
+        const token = signToken({ adminid: adminUser._id, managerid: ManagerUser._id });
         await sgMail.send({
             to: email, // Change to your recipient
             from: process.env.SENDGRID_SENDER_EMAIL, // Change to your verified sender
@@ -118,7 +142,7 @@ module.exports.inviteManagers = catchAsync(async function (req, res, next) {
         });
     }
 
-    res.status(200).json();
+    res.status(200).send();
 });
 
 module.exports.importEmployees = catchAsync(async function (req, res, next) {
