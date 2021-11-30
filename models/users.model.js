@@ -24,7 +24,6 @@ const schema = new mongoose.Schema({
     },
     password: {
         type: String,
-        select: false,
         required: [
             function () {
                 return this.isConfirmed === true;
@@ -104,6 +103,7 @@ schema.pre('save', async function (next) {
 });
 
 schema.methods.isValidPassword = async function (password, encryptedPassword) {
+    console.log({ password, encryptedPassword });
     const isValid = await bcrypt.compare(password, encryptedPassword);
     return isValid;
 };
