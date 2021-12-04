@@ -213,7 +213,7 @@ module.exports.assignManager = catchAsync(async function (req, res, next) {
                 $in: employeeids,
             },
         },
-        { manager: managerid, location: locationid }
+        { manager: managerid, location: locationid, isConfirmed: true }
     );
     res.status(200).send();
 });

@@ -14,8 +14,8 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
 
     const user = await mongoose
         .model('User')
-        .findOne({ email: body.email }, 'name email password isConfirmed isPasswordSet');
-
+        .findOne({ email: body.email }, 'name email password isConfirmed isPasswordSet')
+        .populate({ path: 'manager', select: 'name' });
     if (!user) return next(new AppError('Invalid email or password', 401));
     const isValidPassword = await user.isValidPassword(body.password, user.password);
 
@@ -23,7 +23,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
     if (!user.isConfirmed) return next(new AppError('Your Access is pending', 403));
     const token = signToken({ id: user._id });
 
-    const filteredUser = _.pick(user, ['_id', 'name', 'email', 'isPasswordSet']);
+    const filteredUser = _.pick(user, ['_id', 'name', 'email', 'isPasswordSet', 'manager']);
 
     res.status(200).json({
         token,
