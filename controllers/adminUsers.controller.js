@@ -165,7 +165,7 @@ module.exports.importEmployees = catchAsync(async function (req, res, next) {
 });
 
 module.exports.getSampleFile = catchAsync(async function (req, res, next) {
-    res.sendFile('sample-employees.csv', { root: path.join(__dirname, '..', 'public') });
+    res.download(path.join(__dirname, '..', 'public/sample-employees.csv'));
 });
 
 module.exports.decodeToken = catchAsync(async function (req, res, next) {
