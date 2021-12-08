@@ -5,6 +5,6 @@ const { loginUser, registerAdmin, acceptManager, decodeToken } = require('../con
 router.post('/login', loginUser);
 router.route('/register').post(registerAdmin);
 router.post('/accept', acceptManager);
-router.get('/decode-token/token/:token', decodeToken);
+router.get('/decode/token/:token', decodeToken);
 
 module.exports = router;
