@@ -6,6 +6,7 @@ const { signToken } = require('../utils/jwt');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 const AdminUser = require('../models/adminUsers.model');
+const User = require('../models/users.model');
 
 module.exports.loginUser = catchAsync(async function (req, res, next) {
     const body = _.pick(req.body, ['email', 'password']);
@@ -72,6 +73,16 @@ module.exports.acceptManager = catchAsync(async function (req, res, next) {
         email: manager.email,
         role: manager.role,
     });
+});
+
+module.exports.decodeToken = catchAsync(async function (req, res, next) {
+    const { token } = req.params;
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    const [admin, manager] = await Promise.all([
+        AdminUser.findById(decoded.id, { __v: 0, password: 0 }).lean(),
+        User.findById(decoded.id, { __v: 0, password: 0 }).populate({ path: 'admin', select: '-password -__v' }).lean(),
+    ]);
+    res.status(200).json({ ...admin, ...manager });
 });
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
