@@ -50,9 +50,11 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 });
 
 module.exports.registerUser = catchAsync(async function (req, res, next) {
-    const newUser = _.pick(req.body, ['name', 'email', 'password', 'passwordConfirm']);
-    await Model.create(newUser);
-    res.status(200).json();
+    const body = _.pick(req.body, ['name', 'email', 'password', 'passwordConfirm']);
+    const user = await Model.create(body);
+    const token = signToken({ id: user._id });
+
+    res.status(200).json({ token, _id: user._id, name: user.name, email: user.email, role: 'ADMIN' });
 });
 module.exports.remove = catchAsync(async function (req, res, next) {
     let ids = req.params.id.split(',');
