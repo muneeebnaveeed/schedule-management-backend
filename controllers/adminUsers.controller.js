@@ -7,6 +7,7 @@ const sgMail = require('@sendgrid/mail');
 const validator = require('email-validator');
 const fs = require('file-system');
 const csv = require('csvtojson');
+const path = require('path');
 const { signToken } = require('../utils/jwt');
 const Model = require('../models/adminUsers.model');
 const User = require('../models/users.model');
@@ -161,6 +162,10 @@ module.exports.importEmployees = catchAsync(async function (req, res, next) {
         });
     }
     res.status(200).json();
+});
+
+module.exports.getSampleFile = catchAsync(async function (req, res, next) {
+    res.sendFile('sample-employees.csv', { root: path.join(__dirname, '..', 'public') });
 });
 
 module.exports.decodeToken = catchAsync(async function (req, res, next) {
