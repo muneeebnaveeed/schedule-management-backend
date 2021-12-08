@@ -82,7 +82,7 @@ module.exports.decodeToken = catchAsync(async function (req, res, next) {
         AdminUser.findById(decoded.id, { __v: 0, password: 0 }).lean(),
         User.findById(decoded.id, { __v: 0, password: 0 }).populate({ path: 'admin', select: '-password -__v' }).lean(),
     ]);
-    res.status(200).json({ ...admin, ...manager });
+    res.status(200).json({ ...admin, role: admin ? 'ADMIN' : 'MANAGER', ...manager });
 });
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
