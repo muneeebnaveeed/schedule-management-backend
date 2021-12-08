@@ -1,7 +1,6 @@
 const router = require('express').Router();
 
 const {
-    register,
     approveUser,
     approveManager,
     loginUser,
@@ -12,7 +11,6 @@ const {
 } = require('../controllers/managerUsers.controller');
 const { protect } = require('../middlewares/protect.middleware');
 
-router.post('/register', register);
 router.post('/decode/token/:token', decodeToken);
 router.post('/approve-user', approveUser);
 router.post('/approve-manager', approveManager);

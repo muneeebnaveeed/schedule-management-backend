@@ -3,16 +3,88 @@ const _ = require('lodash');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const { signToken } = require('../utils/jwt');
-const User = require('../models/users.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
+const AdminUser = require('../models/adminUsers.model');
 
-module.exports.getUsers = catchAsync(async function (req, res, next) {
+module.exports.loginUser = catchAsync(async function (req, res, next) {
+    const body = _.pick(req.body, ['email', 'password']);
+    if (Object.keys(body).length < 2) return next(new AppError('Please enter email and password', 400));
+
+    const [admin, manager] = await Promise.all([
+        mongoose.model('AdminUser').findOne({ email: body.email }),
+        mongoose.model('User').findOne({ email: body.email }),
+    ]);
+
+    if (!admin && !manager) return next(new AppError('Invalid email or password', 401));
+    let isValidPassword;
+    let token;
+    let filteredUser;
+    if (admin) {
+        isValidPassword = await admin.isValidPassword(body.password, admin.password);
+        if (!isValidPassword) return next(new AppError('Invalid email or password', 401));
+        token = signToken({ id: admin._id });
+        filteredUser = { ..._.pick(admin, ['_id', 'name', 'email']), role: 'ADMIN' };
+    } else if (manager) {
+        if (!manager.isConfirmed) return next(new AppError('Your access is pending', 403));
+        isValidPassword = await manager.isValidPassword(body.password, manager.password);
+        if (!isValidPassword) return next(new AppError('Invalid email or password', 401));
+
+        token = signToken({ id: manager._id });
+        filteredUser = _.pick(manager, ['_id', 'name', 'email', 'role']);
+    }
+
+    res.status(200).json({
+        token,
+        ...filteredUser,
+    });
+});
+
+module.exports.registerAdmin = catchAsync(async function (req, res, next) {
+    const body = _.pick(req.body, ['name', 'email', 'password', 'passwordConfirm']);
+    const user = await AdminUser.create(body);
+    const token = signToken({ id: user._id });
+
+    res.status(200).json({ token, _id: user._id, name: user.name, email: user.email, role: 'ADMIN' });
+});
+
+module.exports.acceptManager = catchAsync(async function (req, res, next) {
+    const { token } = req.body;
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    const { adminid, managerid } = decoded;
+    const manager = await mongoose.model('User').findById(managerid);
+    if (!manager) return next(new AppError('Manager does not exists', 400));
+    if (manager.admin.toString() !== adminid) return next(new AppError('Invalid Token', 403));
+    const newUser = _.pick(req.body, ['name', 'password', 'passwordConfirm']);
+    if (!Object.keys(newUser).length) return next(new AppError('Please enter a valid user', 400));
+
+    manager.name = newUser.name;
+    manager.password = newUser.password;
+    manager.passwordConfirm = newUser.passwordConfirm;
+    manager.isConfirmed = true;
+    await manager.save();
+    const signedToken = signToken({ id: manager._id });
+
+    res.status(200).json({
+        token: signedToken,
+        _id: manager._id,
+        name: manager.name,
+        email: manager.email,
+        role: manager.role,
+    });
+});
+
+module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort, search } = req.query;
 
-    const results = await User.paginate(
-        { name: { $regex: `${search}`, $options: 'i' } },
-        { projection: { __v: 0, password: 0 }, lean: true, page, limit, sort: { isConfirmed: 1 } }
+    const results = await Model.paginate(
+        {
+            $or: [
+                { name: { $regex: `${search}`, $options: 'i' } },
+                { username: { $regex: `${search}`, $options: 'i' } },
+            ],
+        },
+        { projection: { __v: 0, password: 0 }, lean: true, page, limit, sort: { isConfirmed: 1, ...sort } }
     );
 
     res.status(200).json(
@@ -20,138 +92,96 @@ module.exports.getUsers = catchAsync(async function (req, res, next) {
     );
 });
 
-module.exports.registerUser = catchAsync(async function (req, res, next) {
-    const newUser = _.pick(req.body, ['name', 'password', 'passwordConfirm']);
+module.exports.getOne = catchAsync(async function (req, res, next) {
+    const { id } = req.params;
 
+    if (!id || !mongoose.isValidObjectId(id)) return next(new AppError('Invalid employee id', 400));
+
+    const doc = await Model.findById(id, { __v: 0 }).lean();
+
+    if (!doc) return next(new AppError('Employee does not exist', 404));
+
+    res.status(200).json(doc);
+});
+
+module.exports.register = catchAsync(async function (req, res, next) {
+    const newUser = _.pick(req.body, ['name', 'username', 'password', 'passwordConfirm']);
     if (!Object.keys(newUser).length) return next(new AppError('Please enter a valid user', 400));
-
-    await User.create(newUser);
+    await Model.create(newUser);
 
     res.status(200).json();
 });
 
-module.exports.loginUser = catchAsync(async function (req, res, next) {
-    const body = _.pick(req.body, ['name', 'password']);
+module.exports.inviteEmployee = catchAsync(async function (req, res, next) {
+    const newUser = _.pick(req.body, ['username', 'name']);
 
-    if (Object.keys(body).length < 2) return next(new AppError('Please enter email and password', 400));
+    await Model.create(newUser);
 
-    const user = await User.findOne({ name: body.name }).populate('createdShop');
-
-    if (!user) return next(new AppError('Invalid username or password', 401));
-
-    const isValidPassword = await user.isValidPassword(body.password, user.password);
-
-    if (!isValidPassword) return next(new AppError('Invalid username or password', 401));
-
-    if (!user.isConfirmed) return next(new AppError('Your access is pending', 403));
-
-    const token = signToken({ id: user._id });
-
-    res.status(200).json({
-        token,
-        name: user.name,
-        role: user.role,
-        shop: user.createdShop,
-        _id: user._id,
-    });
+    res.status(200).json();
 });
 
-module.exports.protect = catchAsync(async function (req, res, next) {
-    let token;
+module.exports.setPassword = catchAsync(async function (req, res, next) {
+    const { id } = req.params;
 
-    if (req.headers.authorization) {
-        if (req.headers.authorization === 'dev') {
-            return next();
-        }
+    if (!id || !mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid employee id', 400));
 
-        if (req.headers.authorization.startsWith('Bearer '))
-            // eslint-disable-next-line prefer-destructuring
-            token = req.headers.authorization.split(' ')[1];
-    }
+    const user = await mongoose.model('User').findById(id);
 
-    if (!token) return next(new AppError('Please login to get access', 401));
+    if (!user) return next(new AppError('Employee does not exist', 404));
 
-    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-
-    const freshUser = await mongoose.model('AdminUser').findById(decoded.id);
-
-    if (!freshUser) return next(new AppError('Please login again', 401));
-
-    const hasChangedPassword = freshUser.changedPasswordAfter(decoded.iat);
-    if (hasChangedPassword) return next(new AppError('Please login again', 401));
-
-    const { isConfirmed } = freshUser;
-
-    if (!isConfirmed) return next(new AppError('Your access is pending', 403));
-
-    res.locals.user = freshUser;
-
-    next();
-});
-
-module.exports.allowAccess = (...roles) =>
-    async function (req, res, next) {
-        if (!roles.includes(req.user.role)) return next(new AppError('Unauthorized access to this route', 403));
-        next();
-    };
-
-module.exports.confirmUser = catchAsync(async function (req, res, next) {
-    const { id: userId, role } = req.params;
-
-    if (!mongoose.isValidObjectId(userId)) return next(new AppError('Please enter a valid id', 400));
-
-    const user = await User.findById(userId);
-
-    if (!user) return next(new AppError('User does not exist', 404));
-
-    await user.updateOne({ isConfirmed: true, role: role.toUpperCase(), createdShop: res.locals.shop._id });
+    user.password = req.body.password;
+    user.isPasswordSet = true;
+    await user.save();
 
     res.status(200).send();
 });
 
-module.exports.editUser = catchAsync(async function (req, res, next) {
-    const { id: userId } = req.params;
+module.exports.assignManager = catchAsync(async function (req, res, next) {
+    const { employeeid } = req.params;
+    const { managerid } = req.body;
 
-    if (res.locals.user._id.toString() !== userId)
-        return next(new AppError('You are not authorized to edit user', 403));
+    if (!employeeid || !mongoose.isValidObjectId(employeeid))
+        return next(new AppError('Please enter a valid employee id', 400));
 
-    const newUser = _.pick(req.body, ['name', 'password', 'passwordConfirm']);
+    if (!managerid || !mongoose.isValidObjectId(managerid))
+        return next(new AppError('Please enter a valid manager id', 400));
 
-    if (!Object.keys(newUser).length) return next(new AppError('Please enter a valid user', 400));
-    if (!mongoose.isValidObjectId(userId)) return next(new AppError('Please enter a valid id', 400));
+    const [user, manager] = await Promise.all([
+        Model.findById(employeeid),
+        mongoose.model('ManagerUsers').findById(managerid),
+    ]);
 
-    const user = await User.findById(userId);
+    if (!user) return next(new AppError('Employee does not exist', 404));
+    if (!manager) return next(new AppError('Manager does not exist', 404));
 
-    if (!user) return next(new AppError('User does not exist', 404));
-    if (newUser.password) user.password = newUser.password;
-    if (newUser.name) user.name = newUser.name;
-    if (newUser.passwordConfirm) user.passwordConfirm = newUser.passwordConfirm;
+    user.manager = managerid;
     await user.save();
 
-    res.status(200).json();
+    res.status(200).send();
 });
 
-module.exports.authorizeUser = catchAsync(async function (req, res, next) {
-    const { id: userId, role } = req.params;
+module.exports.assignSchedule = catchAsync(async function (req, res, next) {
+    const { employeeid } = req.params;
+    const { scheduleid } = req.body;
 
-    if (!mongoose.isValidObjectId(userId)) return next(new AppError('Please enter a valid id', 400));
+    if (!employeeid || !mongoose.isValidObjectId(employeeid))
+        return next(new AppError('Please enter a valid employee id', 400));
 
-    const user = await User.findById(userId);
+    if (!scheduleid || !mongoose.isValidObjectId(scheduleid))
+        return next(new AppError('Please enter a valid schedule id', 400));
 
-    if (!user) return next(new AppError('User does not exist', 404));
+    const [user, schedule] = await Promise.all([
+        Model.findById(employeeid),
+        mongoose.model('Schedule').findById(scheduleid),
+    ]);
 
-    await user.update({ role: role.toUpperCase() }, { runValidators: true });
+    if (!user) return next(new AppError('Employee does not exist', 404));
+    if (!schedule) return next(new AppError('Manager does not exist', 404));
 
-    res.status(200).json();
-});
+    user.schedule = scheduleid;
+    await user.save();
 
-module.exports.decodeToken = catchAsync(async function (req, res, next) {
-    const { token } = req.params;
-    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id, { __v: 0, password: 0 }).populate('createdShop').lean();
-    user.shop = user.createdShop;
-    delete user.createdShop;
-    res.status(200).json(user);
+    res.status(200).send();
 });
 
 module.exports.remove = catchAsync(async function (req, res, next) {
@@ -163,7 +193,7 @@ module.exports.remove = catchAsync(async function (req, res, next) {
 
     ids = ids.map((id) => mongoose.Types.ObjectId(id));
 
-    await User.deleteMany({ _id: { $in: ids } });
+    await Model.deleteMany({ _id: { $in: ids } });
 
     res.status(200).json();
 });

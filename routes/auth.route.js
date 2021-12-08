@@ -1,24 +1,9 @@
 const router = require('express').Router();
 
-const {
-    getUsers,
-    loginUser,
-    registerUser,
-    confirmUser,
-    editUser,
-    protect,
-    decodeToken,
-    remove,
-} = require('../controllers/auth.controller');
-const { restrictToShop } = require('../middlewares/createdShop.middleware');
-const autoParams = require('../utils/autoParams');
+const { loginUser, registerAdmin, acceptManager } = require('../controllers/auth.controller');
 
-router.get('/', autoParams, getUsers);
-router.get('/decode/:token', decodeToken);
-router.put('/confirm/:id/:role', restrictToShop, confirmUser);
-// router.put('/:id', protect, editUser);
-router.route('/register').post(registerUser);
-router.route('/login').post(loginUser);
-router.route('/id/:id').delete(remove);
+router.post('/login', loginUser);
+router.route('/register').post(registerAdmin);
+router.post('/accept', acceptManager);
 
 module.exports = router;

@@ -49,13 +49,6 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     );
 });
 
-module.exports.registerUser = catchAsync(async function (req, res, next) {
-    const body = _.pick(req.body, ['name', 'email', 'password', 'passwordConfirm']);
-    const user = await Model.create(body);
-    const token = signToken({ id: user._id });
-
-    res.status(200).json({ token, _id: user._id, name: user.name, email: user.email, role: 'ADMIN' });
-});
 module.exports.remove = catchAsync(async function (req, res, next) {
     let ids = req.params.id.split(',');
 
@@ -130,6 +123,7 @@ module.exports.inviteManagers = catchAsync(async function (req, res, next) {
     for (const email of emails) {
         const ManagerUser = await mongoose.model('User').create({ email, admin: res.locals.user._id, role: 'MANAGER' });
         const token = signToken({ adminid: adminUser._id, managerid: ManagerUser._id });
+        console.log({ token });
         await sgMail.send({
             to: email, // Change to your recipient
             from: process.env.SENDGRID_SENDER_EMAIL, // Change to your verified sender
