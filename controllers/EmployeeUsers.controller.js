@@ -141,6 +141,10 @@ module.exports.assignSchedule = catchAsync(async function (req, res, next) {
     res.status(200).send();
 });
 
+module.exports.startTracking = catchAsync(async function (req, res, next) {
+    res.status(200).send();
+});
+
 module.exports.remove = catchAsync(async function (req, res, next) {
     let ids = req.params.id.split(',');
 

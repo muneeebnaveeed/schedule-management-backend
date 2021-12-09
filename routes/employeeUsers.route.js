@@ -7,7 +7,9 @@ const {
     setPassword,
     assignManager,
     assignSchedule,
+    startTracking,
 } = require('../controllers/EmployeeUsers.controller');
+const { protect } = require('../middlewares/protect.middleware');
 
 router.post('/login', loginUser);
 router.get('/', getAll);
@@ -15,5 +17,7 @@ router.get('/id/:id', getOne);
 router.post('/set-password/id/:id', setPassword);
 router.post('/assign-manager/id/:employeeid', assignManager);
 router.post('/assign-schedule/id/:employeeid', assignSchedule);
+
+router.post('/start-tracking', protect('EMPLOYEE'), startTracking);
 
 module.exports = router;

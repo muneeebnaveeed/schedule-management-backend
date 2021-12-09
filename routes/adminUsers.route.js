@@ -18,11 +18,11 @@ const autoParams = require('../utils/autoParams');
 
 router.route('/id/:id').delete(remove);
 router.route('/login').post(loginUser);
-router.post('/invite-managers/admin-id/id/:adminid/manager-email/:emails', protect, inviteManagers);
-router.post('/import-employees/admin-id/id/:adminid', upload.single('file'), protect, importEmployees);
+router.post('/invite-managers/admin-id/id/:adminid/manager-email/:emails', protect('ADMIN'), inviteManagers);
+router.post('/import-employees/admin-id/id/:adminid', upload.single('file'), protect('ADMIN'), importEmployees);
 router.get('/get-sample-file', getSampleFile);
-router.get('/', autoParams, protect, getAll);
+router.get('/', autoParams, protect('ADMIN'), getAll);
 router.post('/decode/token/:token', decodeToken);
-router.post('/assign/manager/:managerid', protect, assignManager);
+router.post('/assign/manager/:managerid', protect('ADMIN'), assignManager);
 
 module.exports = router;
