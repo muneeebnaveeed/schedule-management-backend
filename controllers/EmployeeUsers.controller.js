@@ -142,7 +142,11 @@ module.exports.assignSchedule = catchAsync(async function (req, res, next) {
 });
 
 module.exports.startTracking = catchAsync(async function (req, res, next) {
-    res.status(200).send();
+    const employeeUser = res.locals.user;
+    // const coordinates = _.pick(req.body.coordinates, ['lat', 'long']);
+    const body = _.pick(req.body, ['ip', 'coordinates']);
+
+    res.status(200).send(req.ips);
 });
 
 module.exports.remove = catchAsync(async function (req, res, next) {
