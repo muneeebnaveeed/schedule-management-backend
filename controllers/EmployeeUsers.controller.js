@@ -146,7 +146,7 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
     // const coordinates = _.pick(req.body.coordinates, ['lat', 'long']);
     const body = _.pick(req.body, ['ip', 'coordinates']);
 
-    res.status(200).send(req.ips);
+    res.status(200).send(req.ip);
 });
 
 module.exports.remove = catchAsync(async function (req, res, next) {
