@@ -10,7 +10,14 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
         {
             name: { $regex: `${search}`, $options: 'i' },
         },
-        { projection: { __v: 0 }, lean: true, page, limit, sort }
+        {
+            projection: { __v: 0, admin: 0 },
+            lean: true,
+            page,
+            limit,
+            sort,
+            populate: [],
+        }
     );
 
     res.status(200).json(
@@ -23,7 +30,7 @@ module.exports.getOne = catchAsync(async function (req, res, next) {
 
     if (!id || !mongoose.isValidObjectId(id)) return next(new AppError('Invalid location id', 400));
 
-    const doc = await Model.findById(id, { __v: 0 }).lean();
+    const doc = await Model.findById(id, { __v: 0, admin: 0 }).lean();
 
     if (!doc) return next(new AppError('Location does not exist', 404));
 
@@ -31,20 +38,24 @@ module.exports.getOne = catchAsync(async function (req, res, next) {
 });
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
-    const newDoc = _.pick(req.body, ['name', 'coordinates']);
-    await Model.create({ ...newDoc, admin: res.locals.user._id });
-    res.status(200).send();
+    const body = _.pick(req.body, ['name', 'coordinates', 'radius']);
+    const location = await Model.create({ ...body, admin: res.locals.user._id });
+    res.status(200).send(location);
 });
 
 module.exports.edit = catchAsync(async function (req, res, next) {
     const { id } = req.params;
     if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
 
-    const newDoc = _.pick(req.body, ['name', 'coordinates']);
+    const newDoc = _.pick(req.body, ['name', 'coordinates', 'radius']);
 
-    await Model.findByIdAndUpdate(id, newDoc);
+    const loction = await Model.findOneAndUpdate(
+        { _id: id, admin: mongoose.Types.ObjectId(res.locals.user._id) },
+        { $set: newDoc },
+        { new: true, select: '-admin -__v' }
+    );
 
-    res.status(200).json();
+    res.status(200).json(loction);
 });
 
 module.exports.remove = catchAsync(async function (req, res, next) {

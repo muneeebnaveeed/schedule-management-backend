@@ -28,6 +28,10 @@ const schema = new mongoose.Schema({
         ref: 'AdminUser',
         required: [true, 'Please enter admin'],
     },
+    radius: {
+        type: Number,
+        required: [true, 'Please enter radius is meters'],
+    },
     createdAt: { type: Date, required: true, default: Date.now() },
 });
 

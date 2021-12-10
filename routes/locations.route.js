@@ -4,10 +4,10 @@ const { getAll, addOne, getOne, edit, remove } = require('../controllers/locatio
 const { protect } = require('../middlewares/protect.middleware');
 const autoParams = require('../utils/autoParams');
 
-router.get('/', autoParams, getAll);
-router.post('/', protect, addOne);
-router.route('/id/:id').get(getOne);
-router.route('/id/:id').patch(edit);
-router.route('/id/:id').delete(remove);
+router.get('/', autoParams, protect('ADMIN'), getAll);
+router.post('/', protect('ADMIN'), addOne);
+router.get('/id/:id', protect('ADMIN'), getOne);
+router.patch('/id/:id', protect('ADMIN'), edit);
+router.delete('/id/:id', protect('ADMIN'), remove);
 
 module.exports = router;

@@ -2,6 +2,7 @@ const { promisify } = require('util');
 const _ = require('lodash');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
+const requestIp = require('request-ip');
 const { signToken } = require('../utils/jwt');
 const Model = require('../models/employeeUsers.model');
 const { catchAsync } = require('./errors.controller');
@@ -140,13 +141,12 @@ module.exports.assignSchedule = catchAsync(async function (req, res, next) {
 
     res.status(200).send();
 });
-
 module.exports.startTracking = catchAsync(async function (req, res, next) {
     const employeeUser = res.locals.user;
     // const coordinates = _.pick(req.body.coordinates, ['lat', 'long']);
     const body = _.pick(req.body, ['ip', 'coordinates']);
-
-    res.status(200).send(req.socket.remoteAddress);
+    const clientIp = requestIp.getClientIp(req);
+    res.status(200).send(clientIp);
 });
 
 module.exports.remove = catchAsync(async function (req, res, next) {
