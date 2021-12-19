@@ -5,6 +5,7 @@
     "rules": {
         "no-unused-vars": "warn",
         "object-shorthand": "off",
+        "allowForLoopAfterthoughts": true,
         "prettier/prettier": [
             "error",
             {

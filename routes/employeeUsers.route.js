@@ -8,6 +8,8 @@ const {
     assignManager,
     assignSchedule,
     startTracking,
+    stopTracking,
+    getLastTracking
 } = require('../controllers/EmployeeUsers.controller');
 const { protect } = require('../middlewares/protect.middleware');
 
@@ -19,5 +21,7 @@ router.post('/assign-manager/id/:employeeid', assignManager);
 router.post('/assign-schedule/id/:employeeid', assignSchedule);
 
 router.post('/start-tracking', protect('EMPLOYEE'), startTracking);
+router.post('/stop-tracking', protect('EMPLOYEE'), stopTracking);
+router.get('/get-last-tracking', protect('EMPLOYEE'), getLastTracking);
 
 module.exports = router;

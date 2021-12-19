@@ -3,14 +3,15 @@ const _ = require('lodash');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const requestIp = require('request-ip');
+const GeoPoint = require('geopoint');
+const dayjs = require('dayjs');
 const { signToken } = require('../utils/jwt');
-const Model = require('../models/employeeUsers.model');
+const User = require('../models/users.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
 module.exports.loginUser = catchAsync(async function (req, res, next) {
     const body = _.pick(req.body, ['email', 'password']);
-    console.log({ body });
     if (Object.keys(body).length < 2) return next(new AppError('Please enter email and password', 400));
 
     const user = await mongoose
@@ -35,7 +36,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort, search } = req.query;
 
-    const results = await Model.paginate(
+    const results = await User.paginate(
         {
             $or: [
                 { name: { $regex: `${search}`, $options: 'i' } },
@@ -55,20 +56,20 @@ module.exports.getOne = catchAsync(async function (req, res, next) {
 
     if (!id || !mongoose.isValidObjectId(id)) return next(new AppError('Invalid employee id', 400));
 
-    const doc = await Model.findById(id, { __v: 0 }).lean();
+    const doc = await User.findById(id, { __v: 0 }).lean();
 
     if (!doc) return next(new AppError('Employee does not exist', 404));
 
     res.status(200).json(doc);
 });
 
-module.exports.register = catchAsync(async function (req, res, next) {
-    const newUser = _.pick(req.body, ['name', 'username', 'password', 'passwordConfirm']);
-    if (!Object.keys(newUser).length) return next(new AppError('Please enter a valid user', 400));
-    await Model.create(newUser);
+// module.exports.register = catchAsync(async function (req, res, next) {
+//     const newUser = _.pick(req.body, ['name', 'username', 'password', 'passwordConfirm']);
+//     if (!Object.keys(newUser).length) return next(new AppError('Please enter a valid user', 400));
+//     await Model.create(newUser);
 
-    res.status(200).json();
-});
+//     res.status(200).json();
+// });
 
 module.exports.inviteEmployee = catchAsync(async function (req, res, next) {
     const newUser = _.pick(req.body, ['username', 'name']);
@@ -141,14 +142,92 @@ module.exports.assignSchedule = catchAsync(async function (req, res, next) {
 
     res.status(200).send();
 });
+
+const LoggedHour = require('../models/loggedHours.model');
+
 module.exports.startTracking = catchAsync(async function (req, res, next) {
-    const employeeUser = res.locals.user;
-    // const coordinates = _.pick(req.body.coordinates, ['lat', 'long']);
-    const body = _.pick(req.body, ['ip', 'coordinates']);
-    const clientIp = requestIp.getClientIp(req);
-    res.status(200).send(clientIp);
+    const bodyCoordinates = _.pick(req.body.coordinates, ['lat', 'long']);
+    const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
+    const { location, _id } = res.locals.user;
+    const setLocationGeoPoint = new GeoPoint(location.coordinates.lat, location.coordinates.long);
+
+    const distance = bodyGeoPoint.distanceTo(setLocationGeoPoint, true) * 1000; // distance in meters
+    if (distance > location.radius)
+        return next(new AppError(`You are ${(distance - location.radius).toFixed(2)} meters away from location.`, 403));
+    const nowDate = Date.now();
+    const dayOfMonth = dayjs().format('D');
+
+    let monthlyLog = await LoggedHour.findOne({ month: dayjs().format('M-YYYY'), employee: _id });
+
+    if (!monthlyLog) {
+        monthlyLog = await LoggedHour.create({
+            employee: _id,
+            lastIn: nowDate,
+            logs: { [dayOfMonth]: [{ in: nowDate }] },
+        });
+    } else if (monthlyLog) {
+        const logOfDay = monthlyLog.logs[dayOfMonth];
+        if (!logOfDay) {
+            await monthlyLog.updateOne({
+                lastIn: nowDate,
+                'logs.[dayOfMonth]': { [dayOfMonth]: [{ in: nowDate }] },
+            });
+        } else if (logOfDay) {
+            let flag = true
+            for (let index = 0; index < logOfDay.length; index++) {
+                flag = logOfDay[index].hasOwnProperty('in') && logOfDay[index].hasOwnProperty('out')
+                if (flag == false) break
+            }
+            if (flag == true) {
+                logOfDay.push({ 'in': nowDate })
+                await monthlyLog.updateOne({ lastIn: nowDate, logs: { ...monthlyLog.logs } })
+            }
+        }
+    }
+    await monthlyLog.save();
+    const response = _.pick(monthlyLog, ['lastIn', 'lastOut'])
+    res.status(200).send(response);
 });
 
+module.exports.stopTracking = catchAsync(async function (req, res, next) {
+    const bodyCoordinates = _.pick(req.body.coordinates, ['lat', 'long']);
+    const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
+    const { location, _id } = res.locals.user;
+    const setLocationGeoPoint = new GeoPoint(location.coordinates.lat, location.coordinates.long);
+
+    const distance = bodyGeoPoint.distanceTo(setLocationGeoPoint, true) * 1000; // distance in meters
+    if (distance > location.radius)
+        return next(new AppError(`You are ${(distance - location.radius).toFixed(2)} meters away from location.`, 403));
+    const nowDate = Date.now();
+    const dayOfMonth = dayjs().format('D');
+    // const dayOfMonth = 20;
+    const monthlyLog = await LoggedHour.findOne({ month: dayjs().format('M-YYYY'), employee: _id });
+    if (!monthlyLog) {
+        return next(new AppError('You first need to start track', 403));
+    }
+    const { lastIn, logs } = monthlyLog;
+
+    for (let index = 0; index < logs[dayOfMonth].length; index++) {
+        if (!logs[dayOfMonth][index].hasOwnProperty('out')) {
+            logs[dayOfMonth][index] = { ...logs[dayOfMonth][index], out: nowDate }
+            await monthlyLog.updateOne({
+                lastOut: nowDate,
+                logs
+            })
+            await monthlyLog.save()
+            break
+        }
+    }
+    const response = _.pick(monthlyLog, ['lastIn', 'lastOut'])
+    res.status(200).send(response);
+});
+
+module.exports.getLastTracking = catchAsync(async function (req, res, next) {
+    const { _id } = res.locals.user;
+    const monthlyLog = await LoggedHour.findOne({ month: dayjs().format('M-YYYY'), employee: _id });
+    const response = _.pick(monthlyLog, ['lastIn', 'lastOut'])
+    res.status(200).send(response);
+});
 module.exports.remove = catchAsync(async function (req, res, next) {
     let ids = req.params.id.split(',');
 
