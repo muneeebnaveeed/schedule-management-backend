@@ -9,6 +9,8 @@ const { signToken } = require('../utils/jwt');
 
 dayjs.extend(localizedFormat);
 const Model = require('../models/managerUsers.model');
+const User = require('../models/users.model');
+const LoggedHour = require('../models/loggedHours.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
@@ -126,3 +128,53 @@ module.exports.decodeToken = catchAsync(async function (req, res, next) {
     if (!manager) return next(new AppError('User does not exist'));
     res.status(200).json(manager);
 });
+
+module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
+    const { startDate, endDate, limit, search, sort } = req.query;
+    const filterQuery = { role: 'EMPLOYEE', manager: res.locals.user._id };
+    if (req.query.next) {
+        filterQuery._id = { $gt: mongoose.Types.ObjectId(req.query.next) }
+    }
+    if (req.query.search) {
+        filterQuery.name = new RegExp(req.query.search, 'i')
+    }
+    let docs = await User.find(filterQuery, '_id').sort(sort).limit(Number(limit))
+    let nextDoc = null
+    let employeeIds = []
+    if (docs.length > 0) {
+        employeeIds = docs.map(e => e._id)
+        nextDoc = docs[docs.length - 1]._id
+    }
+    const dateDiff = Math.ceil((dayjs(endDate).endOf('M')).diff((dayjs(startDate).startOf('M')), 'M', true))
+
+    let months = []
+    for (let index = 0; index < Number(dateDiff); index++) {
+        months.push(dayjs(startDate).add(index, 'M').format('M-YYYY'))
+    }
+
+    let loggedHours = await LoggedHour.find({ month: { $in: months }, employee: { $in: employeeIds } }, 'month employee logs')
+    const startingMonthDay = Number(dayjs(startDate).format('D'))
+    const endingMonthDay = Number(dayjs(endDate).format('D'))
+
+    for (let i = 0; i < loggedHours.length; i++) {
+        if (loggedHours[i].month == months[0]) {
+            for (let j = 1; j < startingMonthDay; j++) {
+                if (loggedHours[i].logs.hasOwnProperty(j)) {
+                    delete loggedHours[i].logs[j]
+                }
+            }
+        }
+        if (loggedHours[i].month == months[months.length - 1]) {
+            for (let j = endingMonthDay; j <= 31; j++) {
+                delete loggedHours[i].logs[j]
+            }
+        }
+    }
+
+    let logs = []
+    for (let i = 0; i < employeeIds.length; i++) {
+        logs.push({ [employeeIds[i]]: loggedHours.filter(e => e.employee.toString() === employeeIds[i].toString()) })
+    }
+
+    res.status(200).send({ nextDoc, logs })
+})

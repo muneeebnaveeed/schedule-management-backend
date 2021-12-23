@@ -6,7 +6,6 @@ const schema = new mongoose.Schema({
     month: {
         type: String,
         default: dayjs().format('M-YYYY'),
-        unique: true,
         required: true,
     },
     employee: {
