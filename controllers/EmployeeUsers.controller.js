@@ -146,7 +146,7 @@ module.exports.assignSchedule = catchAsync(async function (req, res, next) {
 const LoggedHour = require('../models/loggedHours.model');
 
 module.exports.startTracking = catchAsync(async function (req, res, next) {
-    console.log({ body })
+    console.log({ body: req.body })
     const bodyCoordinates = _.pick(req.body.coordinates, ['lat', 'long']);
     console.log({ bodyCoordinates })
 
