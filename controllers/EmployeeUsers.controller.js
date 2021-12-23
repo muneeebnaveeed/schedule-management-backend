@@ -146,7 +146,10 @@ module.exports.assignSchedule = catchAsync(async function (req, res, next) {
 const LoggedHour = require('../models/loggedHours.model');
 
 module.exports.startTracking = catchAsync(async function (req, res, next) {
+    console.log({ body })
     const bodyCoordinates = _.pick(req.body.coordinates, ['lat', 'long']);
+    console.log({ bodyCoordinates })
+
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
     const { location, _id } = res.locals.user;
     const setLocationGeoPoint = new GeoPoint(location.coordinates.lat, location.coordinates.long);
@@ -241,3 +244,40 @@ module.exports.remove = catchAsync(async function (req, res, next) {
 
     res.status(200).json();
 });
+
+module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
+    const { startDate, endDate } = req.query;
+
+    const dateDiff = Math.ceil((dayjs(endDate).endOf('M')).diff((dayjs(startDate).startOf('M')), 'M', true))
+
+    let months = []
+    for (let index = 0; index < Number(dateDiff); index++) {
+        months.push(dayjs(startDate).add(index, 'M').format('M-YYYY'))
+    }
+
+    let loggedHours = await LoggedHour.find({ month: { $in: months }, employee: res.locals.user._id }, 'month logs')
+    const startingMonthDay = Number(dayjs(startDate).format('D'))
+    const endingMonthDay = Number(dayjs(endDate).format('D'))
+
+    for (let i = 0; i < loggedHours.length; i++) {
+        if (loggedHours[i].month == months[0]) {
+            for (let j = 1; j < startingMonthDay; j++) {
+                if (loggedHours[i].logs.hasOwnProperty(j)) {
+                    delete loggedHours[i].logs[j]
+                }
+            }
+        }
+        if (loggedHours[i].month == months[months.length - 1]) {
+            for (let j = endingMonthDay; j <= 31; j++) {
+                delete loggedHours[i].logs[j]
+            }
+        }
+    }
+
+    let logs = []
+    for (let i = 0; i < employeeIds.length; i++) {
+        logs.push({ [employeeIds[i]]: loggedHours.filter(e => e.employee.toString() === employeeIds[i].toString()) })
+    }
+
+    res.status(200).send({ nextDoc, logs })
+})

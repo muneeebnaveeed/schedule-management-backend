@@ -152,7 +152,8 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
         months.push(dayjs(startDate).add(index, 'M').format('M-YYYY'))
     }
 
-    let loggedHours = await LoggedHour.find({ month: { $in: months }, employee: { $in: employeeIds } }, 'month employee logs')
+    let loggedHours = await LoggedHour.find({ month: { $in: months }, employee: { $in: employeeIds } }, 'month employee logs').populate({ path: 'employee', select: '-password -__v' })
+    console.log({ loggedHours: loggedHours[0].employee })
     const startingMonthDay = Number(dayjs(startDate).format('D'))
     const endingMonthDay = Number(dayjs(endDate).format('D'))
 
