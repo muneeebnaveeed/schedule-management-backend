@@ -146,9 +146,7 @@ module.exports.assignSchedule = catchAsync(async function (req, res, next) {
 const LoggedHour = require('../models/loggedHours.model');
 
 module.exports.startTracking = catchAsync(async function (req, res, next) {
-    console.log({ body: req.body })
     const bodyCoordinates = _.pick(req.body.coordinates, ['lat', 'long']);
-    console.log({ bodyCoordinates })
 
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
     const { location, _id } = res.locals.user;
@@ -274,10 +272,10 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
         }
     }
 
-    let logs = []
-    for (let i = 0; i < employeeIds.length; i++) {
-        logs.push({ [employeeIds[i]]: loggedHours.filter(e => e.employee.toString() === employeeIds[i].toString()) })
-    }
+    // let logs = []
+    // for (let i = 0; i < employeeIds.length; i++) {
+    //     logs.push({ [employeeIds[i]]: loggedHours.filter(e => e.employee.toString() === employeeIds[i].toString()) })
+    // }
 
-    res.status(200).send({ nextDoc, logs })
+    res.status(200).send({ loggedHours })
 })
