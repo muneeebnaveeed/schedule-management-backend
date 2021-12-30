@@ -3,7 +3,7 @@
   "version": "0.5.0",
   "main": "app.js",
   "scripts": {
-    "start": "cross-env NODE_ENV=production node app.js",
+    "start": "NODE_ENV=production node app.js",
     "dev": "cross-env NODE_ENV=development nodemon app.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
