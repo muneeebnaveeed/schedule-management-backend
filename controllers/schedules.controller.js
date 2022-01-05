@@ -3,6 +3,8 @@ const _ = require('lodash');
 const Model = require('../models/schedules.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
+const User = require('../models/users.model');
+const dayjs = require('dayjs');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort } = req.query;
@@ -14,21 +16,18 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     );
 });
 
-module.exports.getOne = catchAsync(async function (req, res, next) {
-    const { id } = req.params;
-
-    if (!id || !mongoose.isValidObjectId(id)) return next(new AppError('Schedule location id', 400));
-
-    const doc = await Model.findById(id, { __v: 0 }).lean();
-
-    if (!doc) return next(new AppError('Schedule does not exist', 404));
-
-    res.status(200).json(doc);
-});
-
 module.exports.addOne = catchAsync(async function (req, res, next) {
-    const newDoc = _.pick(req.body, ['title', 'workDays']);
-    await Model.create(newDoc);
+    const body = _.pick(req.body, [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+        'colorCode',
+    ]);
+    await Model.create(body);
     res.status(200).send();
 });
 
@@ -37,9 +36,46 @@ module.exports.edit = catchAsync(async function (req, res, next) {
 
     if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
 
-    const newDoc = _.pick(req.body, ['title', 'workDays']);
+    const body = _.pick(req.body, [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+        'colorCode',
+    ]);
 
-    await Model.findByIdAndUpdate(id, newDoc, { runValidators: true });
+    await Model.findByIdAndUpdate(id, body, { runValidators: true });
+
+    res.status(200).json();
+});
+
+module.exports.assignOpenSchedule = catchAsync(async function (req, res, next) {
+    const { employeeId } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
+
+    const employee = await User.findById(employeeId);
+
+    if (!employee) return next(new AppError('Employee does not exist', 404));
+
+    const weeksStored = Object.values(employee.openSchedule);
+
+    if (weeksStored.length > 4) {
+        const firstWeek = weeksStored[0];
+        delete employee.openSchedule[firstWeek];
+    }
+
+    const currentWeekStartDate = dayjs().startOf('week').toDate();
+
+    employee.openSchedule = {
+        ...employee.openSchedule,
+        [currentWeekStartDate]: { ...employee.openSchedule[currentWeekStartDate], ...req.body },
+    };
+
+    await employee.save();
 
     res.status(200).json();
 });

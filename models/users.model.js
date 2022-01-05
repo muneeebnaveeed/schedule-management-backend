@@ -48,6 +48,11 @@ const schema = new mongoose.Schema({
             message: "Passwords don't match",
         },
     },
+    schedule: {
+        type: mongoose.Types.ObjectId,
+        ref: 'Schedule',
+    },
+    openSchedule: {},
     manager: {
         type: mongoose.Types.ObjectId,
         ref: 'User',
