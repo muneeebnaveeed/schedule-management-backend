@@ -7,9 +7,22 @@ const User = require('../models/users.model');
 const dayjs = require('dayjs');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
-    const { page, limit, sort } = req.query;
+    const { page, limit, sort, search } = req.query;
 
-    const results = await Model.paginate({}, { projection: { __v: 0 }, lean: true, page, limit, sort });
+    const results = await Model.paginate(
+        { title: { $regex: `${search}`, $options: 'i' } },
+        { projection: { __v: 0 }, lean: true, page, limit, sort }
+    );
+
+    const scheduleIds = results.docs.map((e) => e._id);
+    const employees = await User.find({ role: 'EMPLOYEE', schedule: { $in: scheduleIds } }, 'schedule').lean();
+
+    scheduleIds.forEach((id, index) => {
+        const correspondingEmployees = employees.map((e) => {
+            if (e.schedule.toString() === id.toString()) return e._id;
+        });
+        results.docs[index].employees = correspondingEmployees;
+    });
 
     res.status(200).json(
         _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
@@ -17,17 +30,11 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 });
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
-    const body = _.pick(req.body, [
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday',
-        'Sunday',
-        'colorCode',
-    ]);
-    await Model.create(body);
+    const body = _.pick(req.body, ['color', 'title', 'shiftTimes', 'employees']);
+    const createdSchedule = await Model.create(body);
+
+    await User.updateMany({ _id: { $in: body.employees } }, { schedule: createdSchedule._id });
+
     res.status(200).send();
 });
 
@@ -36,16 +43,7 @@ module.exports.edit = catchAsync(async function (req, res, next) {
 
     if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
 
-    const body = _.pick(req.body, [
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday',
-        'Sunday',
-        'colorCode',
-    ]);
+    const body = _.pick(req.body, ['color', 'title', 'shiftTimes']);
 
     await Model.findByIdAndUpdate(id, body, { runValidators: true });
 

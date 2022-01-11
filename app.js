@@ -1,21 +1,22 @@
-const express = require("express");
-const path = require("path");
-const dotenv = require("dotenv");
-const cors = require("cors");
+const express = require('express');
+const path = require('path');
+const dotenv = require('dotenv');
+const cors = require('cors');
 
-const Database = require("./utils/db");
-const SendGrid = require("./utils/sendGrid");
-const AppError = require("./utils/AppError");
+const Database = require('./utils/db');
+const SendGrid = require('./utils/sendGrid');
+const AppError = require('./utils/AppError');
 
-const adminUsersRoute = require("./routes/adminUsers.route");
-const locationsRoute = require("./routes/locations.route");
-const schedulesRoute = require("./routes/schedules.route");
-const managerUsersRoute = require("./routes/managerUsers.route");
-const employeeUsersRoute = require("./routes/employeeUsers.route");
-const authRoute = require("./routes/auth.route");
-const groupsRoute = require("./routes/groups.route");
+const usersRoute = require('./routes/users.route');
+const adminUsersRoute = require('./routes/adminUsers.route');
+const locationsRoute = require('./routes/locations.route');
+const schedulesRoute = require('./routes/schedules.route');
+const managerUsersRoute = require('./routes/managerUsers.route');
+const employeeUsersRoute = require('./routes/employeeUsers.route');
+const authRoute = require('./routes/auth.route');
+const tagsRoute = require('./routes/tags.route');
 
-const { errorController } = require("./controllers/errors.controller");
+const { errorController } = require('./controllers/errors.controller');
 
 const app = express();
 
@@ -24,48 +25,33 @@ dotenv.config();
 const port = process.env.PORT || 5500;
 
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}/`);
+    console.log(`Server running on http://localhost:${port}/`);
 
-  new Database()
-    .connect()
-    .then(() => console.log("Connected to DB"))
-    .catch((err) => console.log(err.message));
-  new SendGrid().setApiKey();
+    new Database()
+        .connect()
+        .then(() => console.log('Connected to DB'))
+        .catch((err) => console.log(err.message));
+    new SendGrid().setApiKey();
 
-  app.use(express.json());
+    app.use(express.json());
 
-  app.use(cors());
+    app.use(cors());
 
-  app.get("/", (req, res) => {
-    res.status(200).send(`Server running at PORT ${port}`);
-  });
+    app.get('/', (req, res) => {
+        res.status(200).send(`Server running at PORT ${port}`);
+    });
 
-  app.use("/admins", adminUsersRoute);
-  app.use("/locations", locationsRoute);
-  app.use("/schedules", schedulesRoute);
-  app.use("/managers", managerUsersRoute);
-  app.use("/employees", employeeUsersRoute);
-  app.use("/groups", groupsRoute);
-  app.use("/auth", authRoute);
+    app.use('/users', usersRoute);
 
-  // app.use('/products', tilesRoute);
-  // app.use('/normal-customers', normalCustomersRoute);
-  // app.use('/vip-customers', vipCustomersRoute);
-  // app.use('/shops', shopsRoute);
-  // app.use('/product-groups', productGroupsRoute);
-  // app.use('/products', productsRoute);
-  // app.use('/raw-material-expenses', rawMaterialExpensesRoute);
-  // app.use('/shop-expenses', shopExpensesRoute);
-  // app.use('/salaries', salariesExpensesRoute);
-  // app.use('/employees', employeesRoute);
-  // app.use('/inventories', inventoriesRoute);
-  // app.use('/bills', billsRoute);
-  // app.use('/audit', auditRoute);
-  // app.use('/auth', authRoute);
+    app.use('/admins', adminUsersRoute);
+    app.use('/locations', locationsRoute);
+    app.use('/schedules', schedulesRoute);
+    app.use('/managers', managerUsersRoute);
+    app.use('/employees', employeeUsersRoute);
+    app.use('/tags', tagsRoute);
+    app.use('/auth', authRoute);
 
-  app.use("*", (req, res, next) =>
-    next(new AppError(`Cannot find ${req.originalUrl} on the server!`, 404))
-  );
+    app.use('*', (req, res, next) => next(new AppError(`Cannot find ${req.originalUrl} on the server!`, 404)));
 
-  app.use(errorController);
+    app.use(errorController);
 });

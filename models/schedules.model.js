@@ -1,26 +1,32 @@
-const uniqueValidator = require('mongoose-unique-validator');
 const mongoose = require('mongoose');
 const mongoosePagiante = require('mongoose-paginate-v2');
+
+const shiftSchema = {
+    in: String,
+    out: String,
+};
 
 const schema = new mongoose.Schema({
     title: {
         type: String,
-        required: [true, 'Please enter a title'],
-        maxLength: [25, 'Maximum of 25 characters are allowed'],
-        unique: true,
-        sparse: true,
-        uniqueCaseInsensitive: true,
+        required: [true, 'Please enter a name for the schedule'],
     },
-    workDays: {
-        type: [String],
-        required: [true, 'Work days are required'],
+    color: {
+        type: String,
+        required: [true, 'Please assign a color to the schedule'],
     },
-    createdAt: { type: Date, required: true, default: Date.now() },
+    shiftTimes: {
+        Monday: shiftSchema,
+        Tuesday: shiftSchema,
+        Wednesday: shiftSchema,
+        Thursday: shiftSchema,
+        Friday: shiftSchema,
+        Saturday: shiftSchema,
+        Sunday: shiftSchema,
+    },
 });
 
 schema.plugin(mongoosePagiante);
-schema.plugin(uniqueValidator, { message: 'Schedule with the {PATH} of {VALUE} already exists' });
-
 const Model = mongoose.model('Schedule', schema);
 
 module.exports = Model;

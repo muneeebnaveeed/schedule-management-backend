@@ -28,7 +28,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                 },
                 {
                     role: { $in: filters },
-                    admin: res.locals.user._id,
+                    admin: res.locals.user.admin?._id || res.locals.user._id,
                 },
             ],
         },
@@ -124,7 +124,6 @@ module.exports.inviteManagers = catchAsync(async function (req, res, next) {
     for (const email of emails) {
         const ManagerUser = await mongoose.model('User').create({ email, admin: res.locals.user._id, role: 'MANAGER' });
         const token = signToken({ adminid: adminUser._id, managerid: ManagerUser._id });
-        console.log({ token });
         await sgMail.send({
             to: email, // Change to your recipient
             from: process.env.SENDGRID_SENDER_EMAIL, // Change to your verified sender

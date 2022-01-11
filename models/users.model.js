@@ -65,9 +65,9 @@ const schema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         ref: 'Location',
     },
-    groups: {
-        type: [mongoose.Types.ObjectId],
-        ref: 'Group',
+    tags: {
+        type: [String],
+        default: [],
     },
     isConfirmed: {
         type: Boolean,

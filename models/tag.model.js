@@ -13,8 +13,8 @@ const schema = new mongoose.Schema({
     createdAt: { type: Date, required: true, default: Date.now() },
 });
 schema.plugin(mongoosePagiante);
-schema.plugin(uniqueValidator, { message: 'User with the {PATH} of {VALUE} already exists' });
+schema.plugin(uniqueValidator, { message: 'Tag with the {PATH} of {VALUE} already exists' });
 
-const Model = mongoose.model('Group', schema);
+const Model = mongoose.model('Tag', schema);
 
 module.exports = Model;

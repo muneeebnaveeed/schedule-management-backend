@@ -1,7 +1,9 @@
 const _ = require('lodash');
 const AppError = require('../utils/AppError');
 
-function getCastError(err) { }
+function getCastError(err) {
+    return err;
+}
 function getValidationError(err) {
     const errors = Object.values(err.errors).map((el) => {
         let { message } = el;
@@ -39,13 +41,12 @@ module.exports.errorController = function (err, req, res, next) {
 
     let error = { ...err, name: err.name, stack: err.stack, message: err.message };
 
-    console.log(error);
-
     if (error.name === 'CastError') error = getCastError(error);
     if (error.name === 'ValidationError') error = getValidationError(error);
 
     if (process.env.NODE_ENV === 'development') {
         const devError = getDevelopmentError(error);
+        // console.log(devError);
         return res.status(error.statusCode).json(devError);
     }
 
