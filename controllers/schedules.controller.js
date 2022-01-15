@@ -43,9 +43,11 @@ module.exports.edit = catchAsync(async function (req, res, next) {
 
     if (!mongoose.isValidObjectId(id)) return next(new AppError('Please enter a valid id', 400));
 
-    const body = _.pick(req.body, ['color', 'title', 'shiftTimes']);
+    const body = _.pick(req.body, ['color', 'title', 'shiftTimes', 'employees']);
 
     await Model.findByIdAndUpdate(id, body, { runValidators: true });
+    await User.updateMany({ _id: { $in: body.employees } }, { schedule: id });
+    // console.log(body.employees)
 
     res.status(200).json();
 });

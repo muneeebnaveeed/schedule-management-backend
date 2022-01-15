@@ -86,8 +86,6 @@ module.exports.getAllTagsAndUntaggedUsers = catchAsync(async function (req, res,
 
     const tags = await Tag.find({ _id: { $in: tagIds } }).lean();
 
-    console.log(tags);
-
     tags.forEach((tag, index) => {
         const correspondingEmployees = taggedEmployees.map((e) => {
             if (e.tags.map((e) => e.toString()).includes(tag._id.toString())) return e._id;
