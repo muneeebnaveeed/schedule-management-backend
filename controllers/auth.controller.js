@@ -7,6 +7,7 @@ const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 const AdminUser = require('../models/adminUsers.model');
 const User = require('../models/users.model');
+const sgMail = require('@sendgrid/mail');
 
 module.exports.loginUser = catchAsync(async function (req, res, next) {
     const body = _.pick(req.body, ['email', 'password']);
@@ -207,4 +208,55 @@ module.exports.remove = catchAsync(async function (req, res, next) {
     await Model.deleteMany({ _id: { $in: ids } });
 
     res.status(200).json();
+});
+
+module.exports.requestForgetPassword = catchAsync(async function (req, res, next) {
+    const body = _.pick(req.body, ['email']);
+
+    const [admin, manager] = await Promise.all([
+        AdminUser.findOne({ email: body.email }).lean(),
+        User.findOne({ email: body.email }).lean(),
+    ]);
+
+    if (!admin && !manager) return next(new AppError('This email does not belong to any user', 404));
+
+    let payload = {};
+    if (admin) payload = { id: admin._id, type: 'ADMIN' };
+    else payload = { id: manager._id, type: 'MANAGER' };
+
+    const token = signToken(payload);
+    await sgMail.send({
+        to: body.email, // Change to your recipient
+        from: process.env.SENDGRID_SENDER_EMAIL, // Change to your verified sender
+        subject: `Schedule Management App - Forget Password`,
+        // text: 'and easy to do anywhere, even with Node.js',
+        html: `<body>
+                    You have requested to change your password.
+                    <a href="https://fyz-schedule-management.herokuapp.com/change-password?token=${token}">
+                        Accept Invitation
+                    </a>
+            </body > `,
+    });
+
+    res.status(200).send();
+});
+
+module.exports.changePassword = catchAsync(async function (req, res, next) {
+    const body = _.pick(req.body, ['password', 'passwordConfirm']);
+    const { token } = req.query;
+
+    console.log(token);
+
+    let user = null;
+    const { type, id } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    if (type === 'MANAGER') user = await User.findById(id);
+    else user = await mongoose.model('AdminUser').findById(id);
+
+    if (!user) return next(new AppError('Invalid user', 404));
+
+    user.password = body.password;
+    user.passwordConfirm = body.passwordConfirm;
+    await user.save();
+
+    res.status(200).send();
 });
