@@ -527,8 +527,8 @@ module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
                 const id = getLastCharacters(populatedEmployee._id.toString(), 4);
                 const date = dayjs(new Date(key)).format('D MMMM YYYY');
                 const day = dayjs(new Date(key)).format('dddd');
-                const scheduleIn = populatedEmployee.schedule?.shiftTimes[day]?.in || 'OFF';
-                const scheduleOut = populatedEmployee.schedule?.shiftTimes[day]?.out || 'OFF';
+                const scheduleIn = populatedEmployee.schedule?.shiftTimes[day]?.in;
+                const scheduleOut = populatedEmployee.schedule?.shiftTimes[day]?.out;
 
                 const row = {
                     Date: date,
