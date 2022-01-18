@@ -9,6 +9,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     const results = await Model.paginate(
         {
             name: { $regex: `${search}`, $options: 'i' },
+            admin: res.locals.user._id,
         },
         {
             projection: { __v: 0, admin: 0 },

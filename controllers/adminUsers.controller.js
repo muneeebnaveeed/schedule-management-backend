@@ -93,33 +93,19 @@ module.exports.inviteManagers = catchAsync(async function (req, res, next) {
         if (!validator.validate(email)) return next(new AppError('One or more emails are invalid', 400));
     }
 
-    const managers = await mongoose.model('User').find({
-        email: {
-            $in: emails,
-        },
-    });
+    const [managers, admins] = await Promise.all([
+        mongoose
+            .model('User')
+            .find({ role: 'MANAGER', email: { $in: emails } })
+            .lean(),
+        mongoose
+            .model('AdminUser')
+            .find({ email: { $in: emails } })
+            .lean(),
+    ]);
 
-    if (managers.length > 0) return next(new AppError('One or more emails are already in use', 400));
-
-    // for (const email of emails) {
-    //     const token = signToken({ adminid: adminUser._id, managerid: ManagerUser._id });
-
-    //     await Promise.all([
-    //         mongoose.model('User').create({ email, admin: res.locals.user._id, role: 'MANAGER' }),
-    //         sgMail.send({
-    //             to: email, // Change to your recipient
-    //             from: process.env.SENDGRID_SENDER_EMAIL, // Change to your verified sender
-    //             subject: `Schedule Management App Invitation`,
-    //             // text: 'and easy to do anywhere, even with Node.js',
-    //             html: `<body> ${adminUser.name} invited you to be a manager of Schedule Management Application.
-    //             <br/>Please follow the link to continue:
-    //             <br/><br/>
-    //             <a href="https://fyz-schedule-management.herokuapp.com/accept-manager-invitation?token=${token}"
-    //             > Accept Invitation</a>
-    //             </body > `,
-    //         },
-    //     ]);
-    // }
+    if (managers.length > 0 || admins.length > 0)
+        return next(new AppError('One or more emails are already in use', 400));
 
     for (const email of emails) {
         const ManagerUser = await mongoose.model('User').create({ email, admin: res.locals.user._id, role: 'MANAGER' });
