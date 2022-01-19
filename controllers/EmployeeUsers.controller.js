@@ -234,10 +234,13 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
 
 module.exports.stopTracking = catchAsync(async function (req, res, next) {
     const bodyCoordinates = _.pick(req.body, ['lat', 'long']);
+    console.log({ bodyCoordinates })
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
+    console.log({ bodyGeoPoint })
 
     const { location, _id } = res.locals.user;
     const setLocationGeoPoint = new GeoPoint(location.coordinates.lat, location.coordinates.long);
+    console.log({ setLocationGeoPoint })
 
     const distance = bodyGeoPoint.distanceTo(setLocationGeoPoint, true) * 1000; // distance in meters
     if (distance > location.radius)
