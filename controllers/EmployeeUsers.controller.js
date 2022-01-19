@@ -181,7 +181,7 @@ module.exports.assignSchedule = catchAsync(async function (req, res, next) {
 const LoggedHour = require('../models/loggedHours.model');
 
 module.exports.startTracking = catchAsync(async function (req, res, next) {
-    const bodyCoordinates = _.pick(req.body.coordinates, ['lat', 'long']);
+    const bodyCoordinates = _.pick(req.body, ['lat', 'long']);
 
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
     const { location, _id } = res.locals.user;
@@ -233,10 +233,8 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
 });
 
 module.exports.stopTracking = catchAsync(async function (req, res, next) {
-    const bodyCoordinates = _.pick(req.body.coordinates, ['lat', 'long']);
-    console.log({ bodyCoordinates })
+    const bodyCoordinates = _.pick(req.body, ['lat', 'long']);
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
-    console.log({ bodyGeoPoint })
 
     const { location, _id } = res.locals.user;
     const setLocationGeoPoint = new GeoPoint(location.coordinates.lat, location.coordinates.long);
