@@ -234,15 +234,15 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
 
 module.exports.stopTracking = catchAsync(async function (req, res, next) {
     const bodyCoordinates = _.pick(req.body, ['lat', 'long']);
-    console.log({ bodyCoordinates })
+
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
-    console.log({ bodyGeoPoint })
+
 
     const { location, _id } = res.locals.user;
     const setLocationGeoPoint = new GeoPoint(location.coordinates.lat, location.coordinates.long);
-    console.log({ setLocationGeoPoint })
 
     const distance = bodyGeoPoint.distanceTo(setLocationGeoPoint, true) * 1000; // distance in meters
+    console.log({ distance, radius: location.radius })
     if (distance > location.radius)
         return next(new AppError(`You are ${(distance - location.radius).toFixed(2)} meters away from location.`, 403));
     const nowDate = new Date();
@@ -254,6 +254,7 @@ module.exports.stopTracking = catchAsync(async function (req, res, next) {
         month: dayjs().format('M-YYYY'),
         employee: _id,
     });
+    console.log({ monthlyLog })
     if (!monthlyLog) {
         return next(new AppError('You first need to start track', 403));
     }
@@ -270,6 +271,7 @@ module.exports.stopTracking = catchAsync(async function (req, res, next) {
             break;
         }
     }
+    console.log({ monthlyLog })
     const response = _.pick(monthlyLog, ['lastIn', 'lastOut']);
     res.status(200).send(response);
 });
