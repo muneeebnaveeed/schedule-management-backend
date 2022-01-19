@@ -235,6 +235,7 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
 module.exports.stopTracking = catchAsync(async function (req, res, next) {
     const bodyCoordinates = _.pick(req.body.coordinates, ['lat', 'long']);
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
+    console.log({ bodyCoordinates, bodyGeoPoint })
     const { location, _id } = res.locals.user;
     const setLocationGeoPoint = new GeoPoint(location.coordinates.lat, location.coordinates.long);
 
