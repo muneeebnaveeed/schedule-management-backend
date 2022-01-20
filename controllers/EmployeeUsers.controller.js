@@ -45,7 +45,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
         .model('User')
         .findOne({ email: body.email }, 'name email password isConfirmed isPasswordSet location')
         .populate({ path: 'manager', select: 'name' })
-        .populate({ path: 'location', select: 'name' });
+        .populate({ path: 'location', select: 'name coordinates' });
 
     if (!user) return next(new AppError('Invalid email or password', 401));
     const isValidPassword = await user.isValidPassword(body.password, user.password);
