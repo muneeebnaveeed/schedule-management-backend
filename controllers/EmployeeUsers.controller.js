@@ -56,9 +56,18 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
 
     const filteredUser = _.pick(user, ['_id', 'name', 'email', 'isPasswordSet', 'manager', 'location']);
 
+    const monthlyLog = await LoggedHour.findOne({
+        month: dayjs().format('M-YYYY'),
+        employee: user._id,
+    });
+    const currentPunchMode = getCurrentPunchMode(monthlyLog)
+    const lastTime = _.pick(monthlyLog, ['lastIn', 'lastOut']);
+
     res.status(200).json({
         token,
         ...filteredUser,
+        currentPunchMode,
+        ...lastTime
     });
 });
 
@@ -313,22 +322,6 @@ module.exports.getLastTracking = catchAsync(async function (req, res, next) {
     });
     const currentPunchMode = getCurrentPunchMode(monthlyLog)
     const lastTime = _.pick(monthlyLog, ['lastIn', 'lastOut']);
-
-    // const punchModes = ['start', 'stop']
-    // let currentPunchMode = punchModes[0]
-
-    // if (!lastTime.lastOut) {
-    //     currentPunchMode = punchModes[1]
-    //     return res.status(200).send({ ...lastTime, currentPunchMode })
-    // }
-    // if (!lastTime.lastOut && lastTime.lastIn) {
-    //     currentPunchMode = punchModes[1]
-
-    //     return res.status(200).send({ ...lastTime, currentPunchMode })
-    // }
-
-    // const timeDiff = dayjs(lastTime.lastOut).diff(dayjs(lastTime.lastIn))
-    // currentPunchMode = timeDiff > 0 ? punchModes[0] : punchModes[1]
 
     return res.status(200).send({ ...lastTime, currentPunchMode });
 });
