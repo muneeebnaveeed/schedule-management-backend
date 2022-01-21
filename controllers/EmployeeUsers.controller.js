@@ -60,14 +60,14 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
         month: dayjs().format('M-YYYY'),
         employee: user._id,
     });
-    const currentPunchMode = getCurrentPunchMode(monthlyLog)
+    const currentPunchMode = getCurrentPunchMode(monthlyLog);
     const lastTime = _.pick(monthlyLog, ['lastIn', 'lastOut']);
 
     res.status(200).json({
         token,
         ...filteredUser,
         currentPunchMode,
-        ...lastTime
+        ...lastTime,
     });
 });
 
@@ -191,25 +191,25 @@ const LoggedHour = require('../models/loggedHours.model');
 
 const getCurrentPunchMode = (monthlyLog) => {
     const lastTime = _.pick(monthlyLog, ['lastIn', 'lastOut']);
-    const punchModes = ['start', 'stop']
-    let currentPunchMode = punchModes[0]
+    const punchModes = ['start', 'stop'];
+    let currentPunchMode = punchModes[0];
 
     if (!lastTime.lastIn && !lastTime.lastOut) {
-        return currentMode = punchModes[0]
+        return (currentMode = punchModes[0]);
     }
     if (!lastTime.lastOut) {
-        currentPunchMode = punchModes[1]
-        return currentPunchMode
+        currentPunchMode = punchModes[1];
+        return currentPunchMode;
     }
     if (!lastTime.lastOut && lastTime.lastIn) {
-        currentPunchMode = punchModes[1]
-        return currentPunchMode
+        currentPunchMode = punchModes[1];
+        return currentPunchMode;
     }
 
-    const timeDiff = dayjs(lastTime.lastOut).diff(dayjs(lastTime.lastIn))
-    currentPunchMode = timeDiff > 0 ? punchModes[0] : punchModes[1]
-    return currentPunchMode
-}
+    const timeDiff = dayjs(lastTime.lastOut).diff(dayjs(lastTime.lastIn));
+    currentPunchMode = timeDiff > 0 ? punchModes[0] : punchModes[1];
+    return currentPunchMode;
+};
 
 module.exports.startTracking = catchAsync(async function (req, res, next) {
     const bodyCoordinates = _.pick(req.body, ['lat', 'long']);
@@ -222,7 +222,7 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
     if (distance > location.radius)
         return next(new AppError(`You are ${(distance - location.radius).toFixed(2)} meters away from location.`, 403));
     const nowDate = new Date();
-    console.log({ nowDate })
+    console.log({ nowDate });
     const dayOfMonth = dayjs(nowDate).format('YYYY-MM-DD');
     const nowTime = dayjs(nowDate).format('h:mm A');
 
@@ -240,10 +240,12 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
     } else if (monthlyLog) {
         const logOfDay = monthlyLog.logs[dayOfMonth];
         if (!logOfDay) {
-            await monthlyLog.updateOne({
-                lastIn: nowDate,
-                'logs.[dayOfMonth]': { [dayOfMonth]: [{ in: nowTime }] },
-            });
+            // await monthlyLog.updateOne({
+            //     lastIn: nowDate,
+            //     'logs.[dayOfMonth]': { [dayOfMonth]: [{ in: nowTime }] },
+            // });
+            monthlyLog.lastIn = nowDate;
+            monthlyLog.logs[dayOfMonth] = { [dayOfMonth]: [{ in: nowTime }] };
         } else if (logOfDay) {
             let flag = true;
             for (let index = 0; index < logOfDay.length; index++) {
@@ -252,15 +254,18 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
             }
             if (flag == true) {
                 logOfDay.push({ in: nowTime });
-                await monthlyLog.updateOne({
-                    lastIn: nowDate,
-                    logs: { ...monthlyLog.logs },
-                });
+                // await monthlyLog.updateOne({
+                //     lastIn: nowDate,
+                //     logs: { ...monthlyLog.logs },
+                // });
+                monthlyLog.lastIn = nowDate;
+                monthlyLog.logs = { ...monthlyLog.logs };
             }
         }
     }
-    await monthlyLog.save();
-    const lastTime = _.pick(monthlyLog, ['lastIn', 'lastOut']);
+
+    const savedLog = await monthlyLog.save();
+    const lastTime = _.pick(savedLog, ['lastIn', 'lastOut']);
 
     res.status(200).send({ ...lastTime, currentPunchMode: 'stop' });
 });
@@ -269,7 +274,6 @@ module.exports.stopTracking = catchAsync(async function (req, res, next) {
     const bodyCoordinates = _.pick(req.body, ['lat', 'long']);
 
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
-
 
     const { location, _id } = res.locals.user;
     const setLocationGeoPoint = new GeoPoint(location.coordinates.lat, location.coordinates.long);
@@ -307,12 +311,10 @@ module.exports.stopTracking = catchAsync(async function (req, res, next) {
         return next(new AppError('You first need to start track', 403));
     }
 
-
     const lastTime = _.pick(monthlyLog, ['lastIn', 'lastOut']);
 
     res.status(200).send({ ...lastTime, currentPunchMode: 'start' });
 });
-
 
 module.exports.getLastTracking = catchAsync(async function (req, res, next) {
     const { _id } = res.locals.user;
@@ -320,7 +322,7 @@ module.exports.getLastTracking = catchAsync(async function (req, res, next) {
         month: dayjs().format('M-YYYY'),
         employee: _id,
     });
-    const currentPunchMode = getCurrentPunchMode(monthlyLog)
+    const currentPunchMode = getCurrentPunchMode(monthlyLog);
     const lastTime = _.pick(monthlyLog, ['lastIn', 'lastOut']);
 
     return res.status(200).send({ ...lastTime, currentPunchMode });
