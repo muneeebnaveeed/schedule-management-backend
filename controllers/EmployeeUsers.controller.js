@@ -195,11 +195,10 @@ const getCurrentPunchMode = (monthlyLog) => {
     let currentPunchMode = punchModes[0];
 
     if (!lastTime.lastIn && !lastTime.lastOut) {
-        return (currentMode = punchModes[0]);
+        return punchModes[0]
     }
     if (!lastTime.lastOut) {
-        currentPunchMode = punchModes[1];
-        return currentPunchMode;
+        return punchModes[1];
     }
     if (!lastTime.lastOut && lastTime.lastIn) {
         currentPunchMode = punchModes[1];
