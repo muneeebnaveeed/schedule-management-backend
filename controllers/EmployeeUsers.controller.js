@@ -253,18 +253,23 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
                 if (flag == false) break;
             }
             if (flag == true) {
-                logOfDay.push({ in: nowTime });
+                monthlyLog.logs[dayOfMonth].push({ in: nowTime });
+
                 // await monthlyLog.updateOne({
                 //     lastIn: nowDate,
                 //     logs: { ...monthlyLog.logs },
                 // });
                 monthlyLog.lastIn = nowDate;
-                monthlyLog.logs = { ...monthlyLog.logs };
+                // monthlyLog.logs = { ...monthlyLog.logs };
             }
         }
     }
 
+    monthlyLog.markModified('logs');
     const savedLog = await monthlyLog.save();
+
+    console.log(savedLog.logs);
+
     const lastTime = _.pick(savedLog, ['lastIn', 'lastOut']);
 
     res.status(200).send({ ...lastTime, currentPunchMode: 'stop' });
