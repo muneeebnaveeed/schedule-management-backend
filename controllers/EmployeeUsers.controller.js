@@ -7,6 +7,7 @@ const GeoPoint = require('geopoint');
 const dayjs = require('dayjs');
 const { signToken } = require('../utils/jwt');
 const User = require('../models/users.model');
+const Schedule = require('../models/schedules.model')
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 const getLastCharacters = require('../utils/getLastCharacters');
@@ -214,14 +215,16 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
     const bodyCoordinates = _.pick(req.body, ['lat', 'long']);
 
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
-    const { location, _id } = res.locals.user;
+    const { location, _id, schedule: scheduleId } = res.locals.user;
+    if (!scheduleId)
+        return next(new AppError(`No schedule assigned yet`, 403));
+
     const setLocationGeoPoint = new GeoPoint(location.coordinates.lat, location.coordinates.long);
 
     const distance = bodyGeoPoint.distanceTo(setLocationGeoPoint, true) * 1000; // distance in meters
     if (distance > location.radius)
         return next(new AppError(`You are ${(distance - location.radius).toFixed(2)} meters away from location.`, 403));
     const nowDate = new Date();
-    console.log({ nowDate });
     const dayOfMonth = dayjs(nowDate).format('YYYY-MM-DD');
     const nowTime = dayjs(nowDate).format('h:mm A');
 
@@ -229,6 +232,8 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
         month: dayjs().format('M-YYYY'),
         employee: _id,
     });
+
+    const schedule = await Schedule.findById(scheduleId)
 
     if (!monthlyLog) {
         monthlyLog = await LoggedHour.create({
@@ -239,10 +244,6 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
     } else if (monthlyLog) {
         const logOfDay = monthlyLog.logs[dayOfMonth];
         if (!logOfDay) {
-            // await monthlyLog.updateOne({
-            //     lastIn: nowDate,
-            //     'logs.[dayOfMonth]': { [dayOfMonth]: [{ in: nowTime }] },
-            // });
             monthlyLog.lastIn = nowDate;
             monthlyLog.logs[dayOfMonth] = { [dayOfMonth]: [{ in: nowTime }] };
         } else if (logOfDay) {
@@ -252,22 +253,14 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
                 if (flag == false) break;
             }
             if (flag == true) {
-                monthlyLog.logs[dayOfMonth].push({ in: nowTime });
-
-                // await monthlyLog.updateOne({
-                //     lastIn: nowDate,
-                //     logs: { ...monthlyLog.logs },
-                // });
+                monthlyLog.logs[dayOfMonth].push({ in: nowTime, schedule });
                 monthlyLog.lastIn = nowDate;
-                // monthlyLog.logs = { ...monthlyLog.logs };
             }
         }
     }
 
     monthlyLog.markModified('logs');
     const savedLog = await monthlyLog.save();
-
-    console.log(savedLog.logs);
 
     const lastTime = _.pick(savedLog, ['lastIn', 'lastOut']);
 
@@ -290,7 +283,6 @@ module.exports.stopTracking = catchAsync(async function (req, res, next) {
     const dayOfMonth = dayjs(nowDate).format('YYYY-MM-DD');
 
     const nowTime = dayjs(nowDate).format('h:mm A');
-    // const dayOfMonth = 20;
     const monthlyLog = await LoggedHour.findOne({
         month: dayjs().format('M-YYYY'),
         employee: _id,
