@@ -46,7 +46,7 @@ module.exports.edit = catchAsync(async function (req, res, next) {
     const body = _.pick(req.body, ['color', 'title', 'shiftTimes', 'employees']);
 
     await Model.findByIdAndUpdate(id, body, { runValidators: true });
-    await User.updateMany({ _id: { $in: body.employees } }, { schedule: id });
+    await User.updateMany({ _id: { $in: body.employees } }, { schedule: id, isScheduleAssigned: true });
 
     res.status(200).json();
 });
