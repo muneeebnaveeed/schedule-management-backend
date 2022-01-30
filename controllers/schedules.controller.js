@@ -33,7 +33,7 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
     const body = _.pick(req.body, ['color', 'title', 'shiftTimes', 'employees']);
     const createdSchedule = await Model.create(body);
 
-    await User.updateMany({ _id: { $in: body.employees } }, { schedule: createdSchedule._id });
+    await User.updateMany({ _id: { $in: body.employees } }, { schedule: createdSchedule._id, isScheduleAssigned: true });
 
     res.status(200).send();
 });
@@ -89,6 +89,7 @@ module.exports.remove = catchAsync(async function (req, res, next) {
     ids = ids.map((id) => mongoose.Types.ObjectId(id));
 
     await Model.deleteMany({ _id: { $in: ids } });
+    await User.updateMany({ schedule: { $in: ids } }, { $unset: { schedule: '' }, isScheduleAssigned: false })
 
     res.status(200).json();
 });

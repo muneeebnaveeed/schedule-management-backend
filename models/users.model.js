@@ -48,10 +48,6 @@ const schema = new mongoose.Schema({
             message: "Passwords don't match",
         },
     },
-    schedule: {
-        type: mongoose.Types.ObjectId,
-        ref: 'Schedule',
-    },
     openSchedule: {},
     manager: {
         type: mongoose.Types.ObjectId,
@@ -59,7 +55,7 @@ const schema = new mongoose.Schema({
     },
     schedule: {
         type: mongoose.Types.ObjectId,
-        ref: 'Schedule',
+        ref: 'Schedule'
     },
     location: {
         type: mongoose.Types.ObjectId,
@@ -76,6 +72,10 @@ const schema = new mongoose.Schema({
     isPasswordSet: {
         type: Boolean,
         default: false,
+    },
+    isScheduleAssigned: {
+        type: Boolean,
+        default: false
     },
     admin: {
         type: mongoose.Types.ObjectId,
