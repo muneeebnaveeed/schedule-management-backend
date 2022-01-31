@@ -218,6 +218,7 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
     const { location, _id, schedule: scheduleId } = res.locals.user;
     if (!scheduleId)
         return next(new AppError(`No schedule assigned yet`, 403));
+    const schedule = await Schedule.findById(scheduleId, 'title color')
 
     const setLocationGeoPoint = new GeoPoint(location.coordinates.lat, location.coordinates.long);
 
@@ -233,19 +234,22 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
         employee: _id,
     });
 
-    const schedule = await Schedule.findById(scheduleId)
 
     if (!monthlyLog) {
         monthlyLog = await LoggedHour.create({
             employee: _id,
             lastIn: nowDate,
-            logs: { [dayOfMonth]: [{ in: nowTime }] },
+            logs: { [dayOfMonth]: [{ in: nowTime, schedule }] },
         });
     } else if (monthlyLog) {
         const logOfDay = monthlyLog.logs[dayOfMonth];
+        if (logOfDay[0].hasOwnProperty('in') && logOfDay[0].hasOwnProperty('out')) {
+            return next(new AppError(`You cannot start tracking today`, 403));
+
+        }
         if (!logOfDay) {
             monthlyLog.lastIn = nowDate;
-            monthlyLog.logs[dayOfMonth] = { [dayOfMonth]: [{ in: nowTime }] };
+            monthlyLog.logs[dayOfMonth] = { [dayOfMonth]: [{ in: nowTime, schedule }] };
         } else if (logOfDay) {
             let flag = true;
             for (let index = 0; index < logOfDay.length; index++) {
