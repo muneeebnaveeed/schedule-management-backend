@@ -46,7 +46,7 @@ module.exports.errorController = function (err, req, res, next) {
 
     if (process.env.NODE_ENV === 'development') {
         const devError = getDevelopmentError(error);
-        // console.log(devError);
+        console.log(devError);
         return res.status(error.statusCode).json(devError);
     }
 

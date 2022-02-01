@@ -7,7 +7,7 @@ const GeoPoint = require('geopoint');
 const dayjs = require('dayjs');
 const { signToken } = require('../utils/jwt');
 const User = require('../models/users.model');
-const Schedule = require('../models/schedules.model')
+const Schedule = require('../models/schedules.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 const getLastCharacters = require('../utils/getLastCharacters');
@@ -196,7 +196,7 @@ const getCurrentPunchMode = (monthlyLog) => {
     let currentPunchMode = punchModes[0];
 
     if (!lastTime.lastIn && !lastTime.lastOut) {
-        return punchModes[0]
+        return punchModes[0];
     }
     if (!lastTime.lastOut) {
         return punchModes[1];
@@ -216,8 +216,7 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
 
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
     const { location, _id, schedule: scheduleId } = res.locals.user;
-    if (!scheduleId)
-        return next(new AppError(`No schedule assigned yet`, 403));
+    if (!scheduleId) return next(new AppError(`No schedule assigned yet`, 403));
 
     const setLocationGeoPoint = new GeoPoint(location.coordinates.lat, location.coordinates.long);
 
@@ -233,7 +232,7 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
         employee: _id,
     });
 
-    const schedule = await Schedule.findById(scheduleId)
+    const schedule = await Schedule.findById(scheduleId);
 
     if (!monthlyLog) {
         monthlyLog = await LoggedHour.create({
@@ -385,6 +384,7 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
         {
             name: { $regex: `${search}`, $options: 'i' },
             role: 'EMPLOYEE',
+            admin: res.locals.user.admin._id,
         },
         '_id name location schedule'
     )
