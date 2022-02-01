@@ -70,12 +70,6 @@ module.exports.getRosterByEmployee = catchAsync(async function (req, res, next) 
 
     // if no roster then show employees' currently assigned schedules
     if (!roster) {
-        const selectedEmployee = {
-            _id: currentEmployee._id,
-            name: currentEmployee.name,
-            email: currentEmployee.email,
-        };
-
         const shift = {};
 
         if (currentEmployee.schedule)
@@ -83,11 +77,8 @@ module.exports.getRosterByEmployee = catchAsync(async function (req, res, next) 
                 shift[key] = { ...value, title: currentEmployee.schedule.title, color: currentEmployee.schedule.color };
             });
 
-        roster = {
-            employee: selectedEmployee,
-            shift,
-        };
-    } else roster = roster.entries.find((row) => row.employee._id.toString() === currentEmployee._id.toString());
+        roster = shift;
+    } else roster = roster.entries.find((row) => row.employee._id.toString() === currentEmployee._id.toString()).shift;
 
     res.status(200).json(roster);
 });
