@@ -9,7 +9,6 @@ require('mongoose-type-email');
 const schema = new mongoose.Schema({
     email: {
         type: mongoose.SchemaTypes.Email,
-        allowBlank: true,
         unique: true,
         lowercase: true,
         required: [true, 'Please enter email address'],
@@ -34,6 +33,14 @@ const schema = new mongoose.Schema({
             },
             message: "Passwords don't match",
         },
+    },
+    maxNoOfManagers: {
+        type: Number,
+        default: 2
+    },
+    maxNoOfEmployees: {
+        type: Number,
+        default: 25
     },
     createdAt: { type: Date, required: true, default: Date.now() },
 });

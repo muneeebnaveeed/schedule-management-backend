@@ -17,6 +17,8 @@ const authRoute = require('./routes/auth.route');
 const tagsRoute = require('./routes/tags.route');
 const rosterRoute = require('./routes/roster.route');
 const dashboardRoute = require('./routes/dashboard.route');
+const superAdminRoute = require('./routes/superAdmin.route');
+
 
 const { errorController } = require('./controllers/errors.controller');
 
@@ -54,6 +56,7 @@ app.listen(port, () => {
     app.use('/auth', authRoute);
     app.use('/roster', rosterRoute);
     app.use('/dashboard', dashboardRoute);
+    app.use('/superAdmin', superAdminRoute);
 
     app.use('*', (req, res, next) => next(new AppError(`Cannot find ${req.originalUrl} on the server!`, 404)));
 
