@@ -58,7 +58,7 @@ module.exports.getRoster = catchAsync(async function (req, res, next) {
 
 module.exports.getRosterByEmployee = catchAsync(async function (req, res, next) {
     const currentEmployee = res.locals.user;
-    const currentAdmin = currentEmployee.admin._id;
+    const currentAdmin = currentEmployee.admin;
 
     const { date } = req.query;
 
@@ -71,7 +71,6 @@ module.exports.getRosterByEmployee = catchAsync(async function (req, res, next) 
     // if no roster then show employees' currently assigned schedules
     if (!roster) {
         const shift = {};
-
         if (currentEmployee.schedule)
             Object.entries(currentEmployee.schedule.shiftTimes).forEach(([key, value]) => {
                 shift[key] = { ...value, title: currentEmployee.schedule.title, color: currentEmployee.schedule.color };

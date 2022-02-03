@@ -44,7 +44,7 @@ module.exports.protect = (role) =>
                         },
                         { path: 'groups', select: '-__v' },
                         { path: 'admin', select: '-password -__v' },
-                        { path: 'location', select: '-__v -admin' },
+                        { path: 'location', select: '-__v -admin' }, { path: 'schedule', select: '-__v' }
                     ])
                     .lean();
             } else if (role === 'MANAGER') {
