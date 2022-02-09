@@ -65,8 +65,11 @@ module.exports.getRosterByEmployee = catchAsync(async function (req, res, next) 
     // get all roster within the date
     let roster = await Model.findOne({
         createdAt: date,
-        admin: currentAdmin,
+        admin: currentAdmin._id.toString(),
     }).lean();
+
+    if (roster)
+        roster = roster.entries.find((row) => row.employee._id.toString() === currentEmployee._id.toString())?.shift;
 
     // if no roster then show employees' currently assigned schedules
     if (!roster) {
@@ -77,7 +80,7 @@ module.exports.getRosterByEmployee = catchAsync(async function (req, res, next) 
             });
 
         roster = shift;
-    } else roster = roster.entries.find((row) => row.employee._id.toString() === currentEmployee._id.toString()).shift;
+    }
 
     res.status(200).json(roster);
 });
