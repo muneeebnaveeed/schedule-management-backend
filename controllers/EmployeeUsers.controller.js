@@ -244,7 +244,12 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
             logs: { [dayOfMonth]: [{ in: nowTime, schedule }] },
         });
     } else if (monthlyLog) {
-        const logOfDay = monthlyLog.logs[dayOfMonth];
+        let logOfDay = monthlyLog.logs[dayOfMonth];
+        if (!logOfDay) {
+            monthlyLog.logs[dayOfMonth] = [{}]
+            logOfDay = [{}]
+        }
+
         if (logOfDay[0].hasOwnProperty('in') && logOfDay[0].hasOwnProperty('out')) {
             return next(new AppError(`You cannot start tracking today`, 403));
         }
@@ -254,7 +259,9 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
         } else if (logOfDay) {
             let flag = true;
             for (let index = 0; index < logOfDay.length; index++) {
-                flag = logOfDay[index].hasOwnProperty('in') && logOfDay[index].hasOwnProperty('out');
+
+                flag = (logOfDay[index].hasOwnProperty('in') && logOfDay[index].hasOwnProperty('out')) || !logOfDay[index].hasOwnProperty('in');
+
                 if (flag == false) break;
             }
             if (flag == true) {
