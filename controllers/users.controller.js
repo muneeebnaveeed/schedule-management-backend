@@ -72,12 +72,14 @@ module.exports.getAllTagsAndUntaggedUsers = catchAsync(async function (req, res,
         .find(
             {
                 role: 'EMPLOYEE',
-                manager: res.locals.manager,
+                manager: res.locals.user._id,
                 admin: res.locals.user.admin?._id,
             },
             '_id email tags'
         )
         .lean();
+
+    console.log(employees);
 
     const taggedEmployees = employees.filter((e) => e.tags.length > 0);
     const unTaggedEmployees = employees.filter((e) => e.tags.length <= 0);
