@@ -79,8 +79,6 @@ module.exports.getAllTagsAndUntaggedUsers = catchAsync(async function (req, res,
         )
         .lean();
 
-    console.log(employees);
-
     const taggedEmployees = employees.filter((e) => e.tags.length > 0);
     const unTaggedEmployees = employees.filter((e) => e.tags.length <= 0);
 
