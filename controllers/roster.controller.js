@@ -15,6 +15,7 @@ module.exports.getRoster = catchAsync(async function (req, res, next) {
     const employees = await User.find(
         {
             role: 'EMPLOYEE',
+            manager: res.locals.user._id,
             admin: currentAdmin,
         },
         '_id name location schedule'
@@ -23,9 +24,12 @@ module.exports.getRoster = catchAsync(async function (req, res, next) {
         .populate({ path: 'schedule', select: '_id title color shiftTimes' })
         .lean();
 
+    console.log(employees);
+
     // get all roster within the date
     let roster = await Model.findOne({
         createdAt: date,
+        manager: res.locals.user._id,
         admin: currentAdmin,
     }).lean();
 
@@ -38,13 +42,12 @@ module.exports.getRoster = catchAsync(async function (req, res, next) {
                 email: employee.email,
             };
 
-            if (!employee.schedule) return selectedEmployee;
-
             const shift = {};
 
-            Object.entries(employee.schedule.shiftTimes).forEach(([key, value]) => {
-                shift[key] = { ...value, title: employee.schedule.title, color: employee.schedule.color };
-            });
+            if (employee.schedule)
+                Object.entries(employee.schedule.shiftTimes).forEach(([key, value]) => {
+                    shift[key] = { ...value, title: employee.schedule.title, color: employee.schedule.color };
+                });
 
             return {
                 employee: selectedEmployee,
@@ -66,6 +69,7 @@ module.exports.getRosterByEmployee = catchAsync(async function (req, res, next) 
     let roster = await Model.findOne({
         createdAt: date,
         admin: currentAdmin._id.toString(),
+        manager: currentEmployee.manager,
     }).lean();
 
     if (roster)
@@ -96,6 +100,7 @@ module.exports.publishRoster = catchAsync(async function (req, res, next) {
     if (!existingRoster) {
         await Model.create({
             admin: currentAdmin,
+            manager: res.locals.user._id,
             entries: req.body,
             createdAt: req.query.date,
         });
