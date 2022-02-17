@@ -72,6 +72,7 @@ module.exports.getAllTagsAndUntaggedUsers = catchAsync(async function (req, res,
         .find(
             {
                 role: 'EMPLOYEE',
+                manager: res.locals.manager,
                 admin: res.locals.user.admin?._id,
             },
             '_id email tags'
