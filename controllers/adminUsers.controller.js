@@ -17,6 +17,11 @@ const AppError = require('../utils/AppError');
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort = { _id: 1 }, search, filters } = req.query;
 
+    let queryByManager = {};
+
+    if (res.locals.user.admin && filters.length === 1 && filters[0] === 'EMPLOYEE')
+        queryByManager = { manager: res.locals.user._id };
+
     const results = await mongoose.model('User').paginate(
         {
             $and: [
@@ -30,6 +35,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                     role: { $in: filters },
                     admin: res.locals.user.admin?._id || res.locals.user._id,
                 },
+                queryByManager,
             ],
         },
         {
