@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 const requestIp = require('request-ip');
 const GeoPoint = require('geopoint');
 const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc')
+dayjs.extend(utc)
 const { signToken } = require('../utils/jwt');
 const User = require('../models/users.model');
 const Schedule = require('../models/schedules.model');
@@ -27,11 +29,11 @@ const getCurrentDaysArray = (date) => {
 };
 
 const convertDayOfMonthToDayOfWeek = (dayOfMonth, monthDate) => {
-    const month = dayjs(monthDate).format('MM');
-    const year = dayjs(monthDate).format('YYYY');
+    const month = dayjs(monthDate).utc().format('MM');
+    const year = dayjs(monthDate).utc().format('YYYY');
     const day = dayOfMonth.toString().length > 1 ? dayOfMonth.toString() : '0' + dayOfMonth;
     const date = dayjs(`${year}-${month}-${day}`).set('hours', 5.5).toDate();
-    const dayOfWeek = dayjs(date).format('dddd');
+    const dayOfWeek = dayjs(date).utc().format('dddd');
 
     return dayOfWeek;
 };
@@ -62,7 +64,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
     const filteredUser = _.pick(user, ['_id', 'name', 'email', 'isPasswordSet', 'manager', 'location']);
 
     const monthlyLog = await LoggedHour.findOne({
-        month: dayjs().format('M-YYYY'),
+        month: dayjs().utc().format('M-YYYY'),
         employee: user._id,
     });
     const currentPunchMode = getCurrentPunchMode(monthlyLog);
@@ -210,14 +212,14 @@ const getCurrentPunchMode = (monthlyLog) => {
         return currentPunchMode;
     }
 
-    const timeDiff = dayjs(lastTime.lastOut).diff(dayjs(lastTime.lastIn));
+    const timeDiff = dayjs(lastTime.lastOut).diff(dayjs(lastTime.lastIn).utc());
     currentPunchMode = timeDiff > 0 ? punchModes[0] : punchModes[1];
     return currentPunchMode;
 };
 
 module.exports.startTracking = catchAsync(async function (req, res, next) {
     const bodyCoordinates = _.pick(req.body, ['lat', 'long']);
-
+    const nowDate = dayjs(req.body.nowDate).utc().format()
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
     const { location, _id, schedule: scheduleId } = res.locals.user;
     if (!scheduleId) return next(new AppError(`No schedule assigned yet`, 403));
@@ -228,12 +230,12 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
     const distance = bodyGeoPoint.distanceTo(setLocationGeoPoint, true) * 1000; // distance in meters
     if (distance > location.radius)
         return next(new AppError(`You are ${(distance - location.radius).toFixed(2)} meters away from location.`, 403));
-    const nowDate = new Date();
-    const dayOfMonth = dayjs(nowDate).format('YYYY-MM-DD');
-    const nowTime = dayjs(nowDate).format('h:mm A');
+
+    const dayOfMonth = dayjs(nowDate).utc().format('YYYY-MM-DD');
+    const nowTime = dayjs(nowDate).utc().format('h:mm A');
 
     let monthlyLog = await LoggedHour.findOne({
-        month: dayjs().format('M-YYYY'),
+        month: dayjs().utc().format('M-YYYY'),
         employee: _id,
     });
 
@@ -241,7 +243,7 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
         monthlyLog = await LoggedHour.create({
             employee: _id,
             lastIn: nowDate,
-            logs: { [dayOfMonth]: [{ in: nowTime, schedule }] },
+            logs: { [dayOfMonth]: [{ in: nowDate, schedule }] },
         });
     } else if (monthlyLog) {
         let logOfDay = monthlyLog.logs[dayOfMonth];
@@ -255,7 +257,7 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
         }
         if (!logOfDay) {
             monthlyLog.lastIn = nowDate;
-            monthlyLog.logs[dayOfMonth] = { [dayOfMonth]: [{ in: nowTime, schedule }] };
+            monthlyLog.logs[dayOfMonth] = { [dayOfMonth]: [{ in: nowDate, schedule }] };
         } else if (logOfDay) {
             let flag = true;
             for (let index = 0; index < logOfDay.length; index++) {
@@ -265,7 +267,7 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
                 if (flag == false) break;
             }
             if (flag == true) {
-                monthlyLog.logs[dayOfMonth].push({ in: nowTime, schedule });
+                monthlyLog.logs[dayOfMonth].push({ in: nowDate, schedule });
                 monthlyLog.lastIn = nowDate;
             }
         }
@@ -281,6 +283,7 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
 
 module.exports.stopTracking = catchAsync(async function (req, res, next) {
     const bodyCoordinates = _.pick(req.body, ['lat', 'long']);
+    const nowDate = dayjs(req.body.nowDate).utc().format()
 
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
 
@@ -291,12 +294,12 @@ module.exports.stopTracking = catchAsync(async function (req, res, next) {
 
     if (distance > location.radius)
         return next(new AppError(`You are ${(distance - location.radius).toFixed(2)} meters away from location.`, 403));
-    const nowDate = new Date();
-    const dayOfMonth = dayjs(nowDate).format('YYYY-MM-DD');
 
-    const nowTime = dayjs(nowDate).format('h:mm A');
+    const dayOfMonth = dayjs(nowDate).utc().format('YYYY-MM-DD');
+
+    const nowTime = dayjs(nowDate).utc().format('h:mm A');
     const monthlyLog = await LoggedHour.findOne({
-        month: dayjs().format('M-YYYY'),
+        month: dayjs().utc().format('M-YYYY'),
         employee: _id,
     });
     if (!monthlyLog) {
@@ -306,7 +309,7 @@ module.exports.stopTracking = catchAsync(async function (req, res, next) {
     if (logs.hasOwnProperty(dayOfMonth)) {
         for (let index = 0; index < logs[dayOfMonth].length; index++) {
             if (!logs[dayOfMonth][index].hasOwnProperty('out')) {
-                logs[dayOfMonth][index] = { ...logs[dayOfMonth][index], out: nowTime };
+                logs[dayOfMonth][index] = { ...logs[dayOfMonth][index], out: nowDate };
                 await monthlyLog.updateOne({
                     lastOut: nowDate,
                     logs,
@@ -327,7 +330,7 @@ module.exports.stopTracking = catchAsync(async function (req, res, next) {
 module.exports.getLastTracking = catchAsync(async function (req, res, next) {
     const { _id } = res.locals.user;
     const monthlyLog = await LoggedHour.findOne({
-        month: dayjs().format('M-YYYY'),
+        month: dayjs().utc().format('M-YYYY'),
         employee: _id,
     });
     const currentPunchMode = getCurrentPunchMode(monthlyLog);
@@ -389,7 +392,7 @@ module.exports.remove = catchAsync(async function (req, res, next) {
 // TODO: Add pagination
 module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
     const { startDate, endDate, limit, search, sort, mode = 'MONTHLY' } = req.query;
-
+    const utcStartDate = dayjs(startDate).utc().format()
     // _id: { $in: employeeIds },
 
     // filter employees by search
@@ -413,7 +416,7 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
     // all logs in given time period grouped by month
     const monthlyLoggedHours = await LoggedHour.find(
         {
-            createdAt: { $gte: startDate },
+            createdAt: { $gte: utcStartDate },
             lastIn: { $lte: endDate },
             employee: { $in: employeeIds },
         },
@@ -458,20 +461,21 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
             delete loggedHour.logs[key];
 
             const date = new Date(key);
-            const formattedDate = dayjs(date).format(parsingFormat);
+            const formattedDate = dayjs(date).utc().format(parsingFormat);
             loggedHour.logs[formattedDate] = value;
         });
     });
 
     if (mode === 'MONTHLY') {
-        const currentDayOfMonth = dayjs().format('D');
+        const currentDayOfMonth = dayjs().utc().format('D');
         const daysInMonth = getCurrentDaysArray(startDate);
         const updatedMergedLoggedHours = [...mergedLoggedHours];
-        const currentMonth = dayjs(startDate).format('MM');
+        const currentMonth = dayjs(utcStartDate).utc().format('MM');
         for (const day of daysInMonth) {
             if (day > currentDayOfMonth) break;
 
             updatedMergedLoggedHours.forEach((loggedHour) => {
+
                 const correspondingDay = loggedHour.logs[day.toString()];
                 if (correspondingDay) return (loggedHour.logs[day.toString()] = 'P');
 
@@ -512,6 +516,8 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
 
 module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
     const { startDate, endDate, limit, search, sort, time, format } = req.query;
+    const utcStartDate = dayjs(startDate).utc().format()
+    const utcEndDate = dayjs(endDate).utc().format()
 
     // _id: { $in: employeeIds },
 
@@ -535,8 +541,8 @@ module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
     // all logs in given time period grouped by month
     const monthlyLoggedHours = await LoggedHour.find(
         {
-            createdAt: { $gte: startDate },
-            lastIn: { $lte: endDate },
+            createdAt: { $gte: utcStartDate },
+            lastIn: { $lte: utcEndDate },
             employee: { $in: employeeIds },
         },
         'employee logs'
@@ -566,14 +572,13 @@ module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
     }
 
     let parsingFormat = 'YYYY-MM-DD';
-
+    console.log(mergedLoggedHours)
     mergedLoggedHours.forEach((loggedHour) => {
         Object.keys(loggedHour.logs).forEach((key) => {
             const value = loggedHour.logs[key];
             delete loggedHour.logs[key];
 
-            const date = new Date(key);
-            const formattedDate = dayjs(date).format(parsingFormat);
+            const formattedDate = dayjs(key).utc().format(parsingFormat);
             loggedHour.logs[formattedDate] = value;
         });
     });
@@ -584,8 +589,8 @@ module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
         Object.entries(e.logs).forEach(([key, value]) => {
             value.forEach((interval) => {
                 const id = getLastCharacters(populatedEmployee._id.toString(), 4);
-                const date = dayjs(new Date(key)).format('D MMMM YYYY');
-                const day = dayjs(new Date(key)).format('dddd');
+                const date = dayjs(new Date(key)).utc().format('D MMMM YYYY');
+                const day = dayjs(new Date(key)).utc().format('dddd');
                 const scheduleIn = populatedEmployee.schedule?.shiftTimes[day]?.in;
                 const scheduleOut = populatedEmployee.schedule?.shiftTimes[day]?.out;
 
@@ -599,12 +604,12 @@ module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
                     'Scheduled Out': scheduleOut,
                 };
 
-                if (time == '24') row['Clock In'] = dayjs('1/1/1 ' + interval['in']).format('H:mm');
+                if (time == '24') row['Clock In'] = dayjs('1/1/1 ' + interval['in']).utc().format('H:mm');
 
                 if (interval['out']) {
                     row['Clock Out'] = interval['out'];
 
-                    if (time == '24') row['Clock Out'] = dayjs('1/1/1 ' + interval['out']).format('H:mm');
+                    if (time == '24') row['Clock Out'] = dayjs('1/1/1 ' + interval['out']).utc().format('H:mm');
                 }
 
                 csvData.push(row);

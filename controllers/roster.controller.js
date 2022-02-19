@@ -65,6 +65,7 @@ module.exports.getRosterByEmployee = catchAsync(async function (req, res, next) 
 
     const { date } = req.query;
 
+
     // get all roster within the date
     let roster = await Model.findOne({
         createdAt: date,
