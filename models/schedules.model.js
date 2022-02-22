@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 const mongoosePagiante = require('mongoose-paginate-v2');
 
 const shiftSchema = {
-    in: String,
-    out: String,
+    in: Date,
+    out: Date,
 };
 
 const schema = new mongoose.Schema({
@@ -24,6 +24,11 @@ const schema = new mongoose.Schema({
         Saturday: shiftSchema,
         Sunday: shiftSchema,
     },
+    manager: {
+        type: mongoose.Types.ObjectId,
+        ref: 'User',
+        required: [true, 'Please enter manager'],
+    }
 });
 
 schema.plugin(mongoosePagiante);

@@ -6,7 +6,9 @@ const requestIp = require('request-ip');
 const GeoPoint = require('geopoint');
 const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc')
+const timezone = require('dayjs/plugin/timezone')
 dayjs.extend(utc)
+dayjs.extend(timezone)
 const { signToken } = require('../utils/jwt');
 const User = require('../models/users.model');
 const Schedule = require('../models/schedules.model');
@@ -515,10 +517,12 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
 });
 
 module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
-    const { startDate, endDate, limit, search, sort, time, format } = req.query;
+    const { startDate, endDate, limit, search, sort, time, format, timeZone } = req.query;
+
     const utcStartDate = dayjs(startDate).utc().format()
     const utcEndDate = dayjs(endDate).utc().format()
-
+    //
+    //
     // _id: { $in: employeeIds },
 
     // filter employees by search
@@ -572,7 +576,6 @@ module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
     }
 
     let parsingFormat = 'YYYY-MM-DD';
-    console.log(mergedLoggedHours)
     mergedLoggedHours.forEach((loggedHour) => {
         Object.keys(loggedHour.logs).forEach((key) => {
             const value = loggedHour.logs[key];
@@ -580,6 +583,7 @@ module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
 
             const formattedDate = dayjs(key).utc().format(parsingFormat);
             loggedHour.logs[formattedDate] = value;
+
         });
     });
 
@@ -594,22 +598,27 @@ module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
                 const scheduleIn = populatedEmployee.schedule?.shiftTimes[day]?.in;
                 const scheduleOut = populatedEmployee.schedule?.shiftTimes[day]?.out;
 
+
                 const row = {
-                    Date: date,
-                    Day: day,
+                    Date: dayjs(date).tz(timeZone).format('D MMMM YYYY'),
+                    Day: dayjs(new Date(key)).tz(timeZone).format('dddd'),
                     Id: id,
                     Name: populatedEmployee.name,
-                    'Clock In': interval['in'],
-                    'Scheduled In': scheduleIn,
-                    'Scheduled Out': scheduleOut,
+                    'Clock In': dayjs(interval['in']).tz(timeZone).format('HH:mm'),
+                    'Scheduled In': scheduleIn ? dayjs(scheduleIn).tz(timeZone).format('HH:mm') : undefined,
+                    'Scheduled Out': scheduleOut ? dayjs(scheduleOut).tz(timeZone).format('HH:mm') : undefined,
                 };
 
-                if (time == '24') row['Clock In'] = dayjs('1/1/1 ' + interval['in']).utc().format('H:mm');
+                if (time == '12') {
+                    row['Clock In'] = dayjs(interval['in']).tz(timeZone).format('h:mm A');
+                    row['Scheduled In'] = scheduleIn ? dayjs(scheduleIn).tz(timeZone).format('h:mm A') : undefined;
+                    row['Scheduled Out'] = scheduleOut ? dayjs(scheduleOut).tz(timeZone).format('h:mm A') : undefined;
+                }
 
                 if (interval['out']) {
-                    row['Clock Out'] = interval['out'];
+                    row['Clock Out'] = dayjs(interval['out']).tz(timeZone).format('HH:mm');
 
-                    if (time == '24') row['Clock Out'] = dayjs('1/1/1 ' + interval['out']).utc().format('H:mm');
+                    if (time == '12') row['Clock Out'] = dayjs(interval['out']).tz(timeZone).format('h:mm A');
                 }
 
                 csvData.push(row);
