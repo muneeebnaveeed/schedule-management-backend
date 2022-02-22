@@ -30,7 +30,6 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 });
 
 module.exports.addOne = catchAsync(async function (req, res, next) {
-    console.log(dayjs().utc().local().format())
     const body = _.pick(req.body, ['color', 'title', 'shiftTimes', 'employees']);
     const createdSchedule = await Model.create({ ...body, manager: res.locals.user._id });
 

@@ -225,14 +225,16 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
     const bodyGeoPoint = new GeoPoint(bodyCoordinates.lat, bodyCoordinates.long);
     const { location, _id, schedule: scheduleId } = res.locals.user;
     if (!scheduleId) return next(new AppError(`No schedule assigned yet`, 403));
-    const schedule = await Schedule.findById(scheduleId, 'title color');
-
+    const schedule = await Schedule.findById(scheduleId, 'title color shiftTimes').lean();
     const setLocationGeoPoint = new GeoPoint(location.coordinates.lat, location.coordinates.long);
 
     const distance = bodyGeoPoint.distanceTo(setLocationGeoPoint, true) * 1000; // distance in meters
     if (distance > location.radius)
         return next(new AppError(`You are ${(distance - location.radius).toFixed(2)} meters away from location.`, 403));
-
+    const day = dayjs().utc().format('dddd')
+    if (!schedule.shiftTimes.hasOwnProperty(day)) {
+        return next(new AppError(`You are not scheduled for today`, 403));
+    }
     const dayOfMonth = dayjs(nowDate).utc().format('YYYY-MM-DD');
     const nowTime = dayjs(nowDate).utc().format('h:mm A');
 
@@ -253,7 +255,6 @@ module.exports.startTracking = catchAsync(async function (req, res, next) {
             monthlyLog.logs[dayOfMonth] = [{}]
             logOfDay = [{}]
         }
-
         if (logOfDay[0].hasOwnProperty('in') && logOfDay[0].hasOwnProperty('out')) {
             return next(new AppError(`You cannot start tracking today`, 403));
         }
