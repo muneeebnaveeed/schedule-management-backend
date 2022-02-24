@@ -601,7 +601,7 @@ module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
 
 
                 const row = {
-                    Date: dayjs(date).tz(timeZone).format('D MMMM YYYY'),
+                    Date: dayjs(new Date(key)).tz(timeZone).format('D MMMM YYYY'),
                     Day: dayjs(new Date(key)).tz(timeZone).format('dddd'),
                     Id: id,
                     Name: populatedEmployee.name,
