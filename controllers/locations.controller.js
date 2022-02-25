@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const _ = require('lodash');
 const Model = require('../models/locations.model');
+const User = require('../models/users.model');
+
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
@@ -24,6 +26,16 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     res.status(200).json(
         _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
     );
+});
+
+module.exports.getAllByManager = catchAsync(async function (req, res, next) {
+    const assignedEmployees = await User.find({ role: 'EMPLOYEE', manager: res.locals.user._id }, 'location')
+        .populate({ path: 'location', select: 'name _id' })
+        .lean();
+
+    const locations = assignedEmployees.map((e) => e.location);
+
+    res.status(200).json(locations);
 });
 
 module.exports.getOne = catchAsync(async function (req, res, next) {

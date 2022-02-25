@@ -4,7 +4,7 @@ const { getAll, addOne, edit, remove, assignOpenSchedule } = require('../control
 const autoParams = require('../utils/autoParams');
 const { protect } = require('../middlewares/protect.middleware');
 
-router.get('/', autoParams, getAll);
+router.get('/', autoParams, protect('MANAGER'), getAll);
 router.post('/', protect('MANAGER'), addOne);
 router.route('/id/:id').patch(edit);
 router.patch('/open-schedule/employeeId/:employeeId', assignOpenSchedule);

@@ -7,9 +7,13 @@ const utc = require('dayjs/plugin/utc');
 dayjs.extend(utc);
 
 module.exports.getRoster = catchAsync(async function (req, res, next) {
-    const { date } = req.query;
+    const { date, locations } = req.query;
 
     const currentAdmin = res.locals.user.admin._id;
+
+    const additionalQuery = {};
+
+    if (locations?.length) additionalQuery.location = locations;
 
     // get all employees
     const employees = await User.find(
@@ -17,6 +21,7 @@ module.exports.getRoster = catchAsync(async function (req, res, next) {
             role: 'EMPLOYEE',
             manager: res.locals.user._id,
             admin: currentAdmin,
+            ...additionalQuery,
         },
         '_id name location schedule'
     )
@@ -64,7 +69,6 @@ module.exports.getRosterByEmployee = catchAsync(async function (req, res, next) 
     const currentAdmin = currentEmployee.admin;
 
     const { date } = req.query;
-
 
     // get all roster within the date
     let roster = await Model.findOne({
