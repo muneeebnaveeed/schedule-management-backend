@@ -33,7 +33,14 @@ module.exports.getAllByManager = catchAsync(async function (req, res, next) {
         .populate({ path: 'location', select: 'name _id' })
         .lean();
 
-    const locations = assignedEmployees.map((e) => e.location);
+    const locationIds = [...new Set(assignedEmployees.map((e) => e.location?._id.toString()))];
+
+    const locations = [];
+
+    locationIds.forEach((id) => {
+        let employee = assignedEmployees.find((employee) => employee.location?._id.toString() === id.toString());
+        if (employee) locations.push(employee.location);
+    });
 
     res.status(200).json(locations);
 });

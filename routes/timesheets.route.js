@@ -4,7 +4,7 @@ const { getTimeSheet, exportTimesheet } = require('../controllers/timesheets.con
 const { protect } = require('../middlewares/protect.middleware');
 const autoParams = require('../utils/autoParams');
 
-router.get('/', autoParams, protect('MANAGER'), getTimeSheet);
+router.get('/', protect('MANAGER'), getTimeSheet);
 router.get('/export', autoParams, protect('MANAGER'), exportTimesheet);
 
 module.exports = router;

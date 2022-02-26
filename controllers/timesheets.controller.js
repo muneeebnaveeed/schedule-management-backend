@@ -45,7 +45,7 @@ const convertDayOfMonthToDayOfWeek = (dayOfMonth, monthDate) => {
 // TODO: Add pagination
 module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
     const { startDate, endDate, limit, search, sort, mode = 'MONTHLY' } = req.query;
-    const utcStartDate = dayjs(startDate).utc().format();
+    const utcStartDate = dayjs(startDate).tz('Greenwich', true).toDate();
     // _id: { $in: employeeIds },
 
     // filter employees by search
@@ -121,7 +121,7 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
 
     if (mode === 'MONTHLY') {
         const currentDayOfMonth = dayjs().utc().format('D');
-        const daysInMonth = getCurrentDaysArray(startDate);
+        const daysInMonth = getCurrentDaysArray(utcStartDate);
         const updatedMergedLoggedHours = [...mergedLoggedHours];
         const currentMonth = dayjs(utcStartDate).utc().format('MM');
         for (const day of daysInMonth) {
@@ -131,7 +131,7 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
                 const correspondingDay = loggedHour.logs[day.toString()];
                 if (correspondingDay) return (loggedHour.logs[day.toString()] = 'P');
 
-                const dayOfWeek = convertDayOfMonthToDayOfWeek(day, startDate);
+                const dayOfWeek = convertDayOfMonthToDayOfWeek(day, utcStartDate);
 
                 const isScheduled = loggedHour.employee?.schedule?.shiftTimes[dayOfWeek];
 

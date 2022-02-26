@@ -16,7 +16,7 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
 
     if (doc.employees.length < 1) return next(new AppError('Please assign employees to the tag', 400));
 
-    const createdTag = await Model.create(doc);
+    const createdTag = await Model.create({ ...doc, manager: res.locals.user._id });
 
     await User.updateMany({ _id: { $in: doc.employees } }, { $push: { tags: createdTag._id } });
 
@@ -29,6 +29,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     const results = await Model.paginate(
         {
             name: { $regex: `${search}`, $options: 'i' },
+            manager: res.locals.user._id,
         },
         { projection: { __v: 0 }, lean: true, page, limit, sort: { name: 1, ...sort } }
     );

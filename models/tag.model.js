@@ -7,10 +7,9 @@ const schema = new mongoose.Schema({
     name: {
         type: String,
         required: [true, 'Please enter a name'],
-        unique: true,
-        lowercase: true,
     },
     createdAt: { type: Date, required: true, default: Date.now() },
+    manager: { type: mongoose.Types.ObjectId, ref: 'User' },
 });
 schema.plugin(mongoosePagiante);
 schema.plugin(uniqueValidator, { message: 'Tag with the {PATH} of {VALUE} already exists' });
