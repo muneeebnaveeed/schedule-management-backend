@@ -143,15 +143,34 @@ module.exports.importEmployees = catchAsync(async function (req, res, next) {
         groups = groups.map((id) => mongoose.Types.ObjectId(id));
     }
     const employees = await csv().fromString(req.file.buffer.toString());
-    for (const employee of employees) {
-        await User.create({
-            ...employee,
-            passwordConfirm: employee.password,
+    const managerEmails = [];
+    employees.forEach((e) => {
+        if (e.manager) managerEmails.push(e.manager);
+    });
+    const uniqueManagerEmails = [...new Set(managerEmails)];
+    const managers = await User.find({ role: 'MANAGER', email: { $in: uniqueManagerEmails } }, '_id email').lean();
+
+    if (managers.length < uniqueManagerEmails.length) return next(new AppError('Manager(s) does not exist', 404));
+
+    const employeesToBeCreated = employees.map((e) => {
+        const correspondingManager = managers.find((m) => m.email.toString() === e.manager);
+        const returningEmployee = {
+            ...e,
+            passwordConfirm: e.password,
             groups,
             admin: res.locals.user._id,
             role: 'EMPLOYEE',
-        });
-    }
+        };
+
+        delete returningEmployee.manager;
+
+        if (correspondingManager) returningEmployee.manager = correspondingManager._id;
+
+        return returningEmployee;
+    });
+
+    await User.create(employeesToBeCreated);
+
     res.status(200).json();
 });
 
