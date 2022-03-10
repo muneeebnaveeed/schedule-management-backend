@@ -55,15 +55,15 @@ const schema = new mongoose.Schema({
     },
     schedule: {
         type: mongoose.Types.ObjectId,
-        ref: 'Schedule'
+        ref: 'Schedule',
     },
     location: {
         type: mongoose.Types.ObjectId,
         ref: 'Location',
     },
-    tags: {
-        type: [String],
-        default: [],
+    tag: {
+        type: mongoose.Types.ObjectId,
+        ref: 'Tag',
     },
     isConfirmed: {
         type: Boolean,
@@ -75,7 +75,7 @@ const schema = new mongoose.Schema({
     },
     isScheduleAssigned: {
         type: Boolean,
-        default: false
+        default: false,
     },
     admin: {
         type: mongoose.Types.ObjectId,

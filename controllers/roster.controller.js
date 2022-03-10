@@ -13,7 +13,7 @@ module.exports.getRoster = catchAsync(async function (req, res, next) {
 
     const additionalQuery = {};
 
-    if (locations?.length) additionalQuery.location = locations;
+    if (locations?.length) additionalQuery.location = { $in: locations };
 
     // get all employees
     const employees = await User.find(
@@ -28,8 +28,6 @@ module.exports.getRoster = catchAsync(async function (req, res, next) {
         .populate({ path: 'location', select: '_id name' })
         .populate({ path: 'schedule', select: '_id title color shiftTimes' })
         .lean();
-
-    console.log(employees);
 
     // get all roster within the date
     let roster = await Model.findOne({

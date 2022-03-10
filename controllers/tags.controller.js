@@ -18,7 +18,9 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
 
     const createdTag = await Model.create({ ...doc, manager: res.locals.user._id });
 
-    await User.updateMany({ _id: { $in: doc.employees } }, { $push: { tags: createdTag._id } });
+    console.log(doc.employees);
+
+    await User.updateMany({ role: 'EMPLOYEE', _id: { $in: doc.employees } }, { tag: createdTag._id });
 
     res.status(200).json();
 });
@@ -35,11 +37,11 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     );
 
     const tagIds = results.docs.map((e) => e._id);
-    const employees = await User.find({ role: 'EMPLOYEE', tags: { $in: tagIds } }, '_id tags').lean();
+    const employees = await User.find({ role: 'EMPLOYEE', tag: { $in: tagIds } }, '_id tag').lean();
 
     tagIds.forEach((id, index) => {
         const correspondingEmployees = employees.map((e) => {
-            if (e.tags.map((e) => e.toString()).includes(id.toString())) return e._id;
+            if (e.tag.toString() === id.toString()) return e._id;
         });
         results.docs[index].employees = correspondingEmployees;
     });

@@ -44,9 +44,13 @@ const convertDayOfMonthToDayOfWeek = (dayOfMonth, monthDate) => {
 
 // TODO: Add pagination
 module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
-    const { startDate, endDate, limit, search, sort, mode = 'MONTHLY' } = req.query;
+    const { startDate, endDate, limit, search, sort, mode = 'MONTHLY', locations = [] } = req.query;
     const utcStartDate = dayjs(startDate).tz('Greenwich', true).toDate();
     // _id: { $in: employeeIds },
+
+    const additionalQuery = {};
+
+    if (locations.length) additionalQuery.locations = { $in: locations };
 
     // filter employees by search
     const employees = await User.find(
@@ -54,6 +58,7 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
             name: { $regex: `${search}`, $options: 'i' },
             role: 'EMPLOYEE',
             admin: res.locals.user.admin._id,
+            ...additionalQuery,
         },
         '_id name location schedule'
     )
