@@ -1,12 +1,11 @@
 const router = require('express').Router();
 
-const {
-    getDashboard
-} = require('../controllers/dashboard.controller');
+const { getEmployees } = require('../controllers/dashboard.controller');
 
-const { protect } = require('../middlewares/protect.middleware');
-const autoParams = require('../utils/autoParams');
+const { authentication, authorization } = require('../middlewares/auth.middleware');
 
-router.get('/', protect('ADMIN'), getDashboard);
+// router.get('/locations', authentication, authorization('MANAGER'), getByLocations);
+// router.get('/schedules', authentication, authorization('MANAGER'), getBySchedules);
+router.get('/filter/:filter', authentication, authorization('MANAGER'), getEmployees);
 
 module.exports = router;
