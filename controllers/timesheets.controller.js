@@ -60,7 +60,7 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
             admin: res.locals.user.admin._id,
             ...additionalQuery,
         },
-        '_id name location schedule'
+        '_id name location schedule',
     )
         .populate({ path: 'location', select: '_id name' })
         .populate({ path: 'schedule', select: '_id title color shiftTimes' })
@@ -78,7 +78,7 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
             lastIn: { $lte: endDate },
             employee: { $in: employeeIds },
         },
-        'employee logs'
+        'employee logs',
     ).lean();
 
     // all logs grouped by employee
@@ -86,7 +86,7 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
 
     for (const loggedHour of monthlyLoggedHours) {
         let existingLoggedHour = mergedLoggedHours.find(
-            (e) => e.employee.toString() === loggedHour.employee.toString()
+            (e) => e.employee.toString() === loggedHour.employee.toString(),
         );
 
         // if cross month logs exist
@@ -129,12 +129,17 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
         const daysInMonth = getCurrentDaysArray(utcStartDate);
         const updatedMergedLoggedHours = [...mergedLoggedHours];
         const currentMonth = dayjs(utcStartDate).utc().format('MM');
+
         for (const day of daysInMonth) {
             if (day > currentDayOfMonth) break;
 
             updatedMergedLoggedHours.forEach((loggedHour) => {
                 const correspondingDay = loggedHour.logs[day.toString()];
-                if (correspondingDay) return (loggedHour.logs[day.toString()] = 'P');
+                if (correspondingDay) {
+                    if (correspondingDay[0]?.latePunched) {
+                        return (loggedHour.logs[day.toString()] = 'L');
+                    } else return (loggedHour.logs[day.toString()] = 'P');
+                }
 
                 const dayOfWeek = convertDayOfMonthToDayOfWeek(day, utcStartDate);
 
@@ -174,8 +179,6 @@ module.exports.getTimeSheet = catchAsync(async function (req, res, next) {
 module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
     const { startDate, endDate, limit, search, sort, time, format, timeZone } = req.query;
 
-    console.log({ startDate, endDate, limit, search, sort, time, format, timeZone });
-
     const utcStartDate = dayjs(startDate).utc().format();
     const utcEndDate = dayjs(endDate).utc().format();
     //
@@ -189,7 +192,7 @@ module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
             role: 'EMPLOYEE',
             manager: res.locals.user._id,
         },
-        '_id name location schedule'
+        '_id name location schedule',
     )
         .populate({ path: 'location', select: '_id name' })
         .populate({ path: 'schedule', select: 'shiftTimes' })
@@ -207,7 +210,7 @@ module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
             lastIn: { $lte: utcEndDate },
             employee: { $in: employeeIds },
         },
-        'employee logs'
+        'employee logs',
     ).lean();
 
     // all logs grouped by employee
@@ -215,7 +218,7 @@ module.exports.exportTimesheet = catchAsync(async function (req, res, next) {
 
     for (const loggedHour of monthlyLoggedHours) {
         let existingLoggedHour = mergedLoggedHours.find(
-            (e) => e.employee.toString() === loggedHour.employee.toString()
+            (e) => e.employee.toString() === loggedHour.employee.toString(),
         );
 
         // if cross month logs exist
