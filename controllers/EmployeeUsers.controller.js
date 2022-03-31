@@ -361,6 +361,16 @@ module.exports.stopTracking = catchAsync(async function (req, res, next) {
     res.status(200).send({ ...lastTime, currentPunchMode: 'start' });
 });
 
+module.exports.stopTrackingAtDayEnd = catchAsync(async function (req, res, next) {
+    console.log('stop tracking at day end');
+    const nowDate = dayjs().utc().format();
+    const date = dayjs(nowDate).utc().format('YYYY-MM-DD');
+    //TODO:
+    // await  LoggedHour.updateMany({},{$set: {`logs[${date}][0].out`: nowDate}});
+
+    return res.status(200).send();
+});
+
 module.exports.getLastTracking = catchAsync(async function (req, res, next) {
     const { _id } = res.locals.user;
     const monthlyLog = await LoggedHour.findOne({
