@@ -6,6 +6,31 @@ const User = require('../models/users.model');
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
+const getLocationsByManager = async (managerId) => {
+    try {
+
+        const assignedEmployees = await User.find({ role: 'EMPLOYEE', manager: managerId }, 'location')
+            .populate({ path: 'location', select: 'name _id' })
+            .lean();
+
+        const locationIds = [...new Set(assignedEmployees.map((e) => e.location?._id.toString()))];
+
+        const locations = [];
+
+        locationIds.forEach((id) => {
+            let employee = assignedEmployees.find((employee) => employee.location?._id.toString() === id.toString());
+            if (employee) locations.push(employee.location);
+        });
+
+
+        return locations;
+    } catch (error) {
+        throw error;
+    }
+}
+
+module.exports.getLocationsByManager = getLocationsByManager;
+
 module.exports.getAll = catchAsync(async function (req, res, next) {
     const { page, limit, sort, search } = req.query;
     const results = await Model.paginate(
@@ -29,19 +54,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
 });
 
 module.exports.getAllByManager = catchAsync(async function (req, res, next) {
-    const assignedEmployees = await User.find({ role: 'EMPLOYEE', manager: res.locals.user._id }, 'location')
-        .populate({ path: 'location', select: 'name _id' })
-        .lean();
-
-    const locationIds = [...new Set(assignedEmployees.map((e) => e.location?._id.toString()))];
-
-    const locations = [];
-
-    locationIds.forEach((id) => {
-        let employee = assignedEmployees.find((employee) => employee.location?._id.toString() === id.toString());
-        if (employee) locations.push(employee.location);
-    });
-
+    const locations = await getLocationsByManager(res.locals.user._id);
     res.status(200).json(locations);
 });
 
