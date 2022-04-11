@@ -211,7 +211,7 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
           <td class="center-text" data-text-style="Paragraphs" align="center" style="font-family:'Barlow',Arial,Helvetica,sans-serif;font-size:16px;line-height:26px;font-weight:400;font-style:normal;color:#333333;text-decoration:none;letter-spacing:0px;width: 500px !important;">
               <singleline>
                 <div mc:edit data-text-edit>
-                  ${adminName} has invited you to join Hazir as a Manager. Please click below to register yourself:
+                  ${adminName} has invited you to join onshift as a Manager. Please click below to register yourself:
                 </div>
               </singleline>
           </td>
@@ -265,7 +265,7 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
           <td class="center-text" data-text-style="Paragraphs" align="center" style="font-family:'Barlow',Arial,Helvetica,sans-serif;font-size:14px;line-height:24px;font-weight:300;font-style:normal;color:#666666;text-decoration:none;letter-spacing:0px;">
             <multiline>
               <div mc:edit data-text-edit>
-                2022 Hazir. All Rights Reserved.<br>
+                2022 onshift. All Rights Reserved.<br>
                 Address name St. 24, City Name, State, Country Name
               </div>
             </multiline>
@@ -402,7 +402,7 @@ module.exports.inviteManagers = catchAsync(async function (req, res, next) {
         await sgMail.send({
             to: email, // Change to your recipient
             from: process.env.SENDGRID_SENDER_EMAIL, // Change to your verified sender
-            subject: `Hazir | You've been invited`,
+            subject: `onshift | You've been invited`,
             // text: 'and easy to do anywhere, even with Node.js',
             html: getInvitationEmail({ token, adminName: adminUser.name }),
         });

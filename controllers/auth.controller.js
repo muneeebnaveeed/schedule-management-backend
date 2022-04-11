@@ -260,7 +260,7 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
           <td class="center-text" data-text-style="Paragraphs" align="center" style="font-family:'Barlow',Arial,Helvetica,sans-serif;font-size:14px;line-height:24px;font-weight:300;font-style:normal;color:#666666;text-decoration:none;letter-spacing:0px;">
             <multiline>
               <div mc:edit data-text-edit>
-                2022 Hazir. All Rights Reserved.<br>
+                2022 onshift. All Rights Reserved.<br>
                 Address name St. 24, City Name, State, Country Name
               </div>
             </multiline>
@@ -509,7 +509,7 @@ module.exports.requestForgetPassword = catchAsync(async function (req, res, next
     await sgMail.send({
         to: body.email, // Change to your recipient
         from: process.env.SENDGRID_SENDER_EMAIL, // Change to your verified sender
-        subject: `Hazir | Password Reset Link`,
+        subject: `onshift | Password Reset Link`,
         // text: 'and easy to do anywhere, even with Node.js',
         html: getForgetPasswordEmail(token),
     });
