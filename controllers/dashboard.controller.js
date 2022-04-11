@@ -32,18 +32,41 @@ const getEmployeesByFilter = ({ managerId, filter, ids }) => {
             if (!mongoose.isValidObjectId(id)) reject(new AppError('Please select valid locations', 400));
         }
 
-        const additionalQuery = {};
-        if (filter === 'LOCATION') additionalQuery.location = { $in: ids };
-        else additionalQuery.schedule = { $in: ids };
-
         User.find({
             role: 'EMPLOYEE',
             manager: managerId,
+            [filter]: { $in: ids }
         }, '_id name location schedule')
             .populate({ path: 'schedule', select: '_id title shiftTimes' })
             .then((employees) => {
                 const employeeIds = employees.map((e) => e._id);
                 resolve({ employees, employeeIds });
+            })
+            .catch((err) => reject(err));
+    });
+};
+
+const getPaginatedEmployeesByFilter = ({ page, limit, managerId, filter, ids }) => {
+    return new Promise((resolve, reject) => {
+        for (const id of ids) {
+            if (!mongoose.isValidObjectId(id)) reject(new AppError('Please select valid locations', 400));
+        }
+
+
+        User.paginate({
+            role: 'EMPLOYEE',
+            manager: managerId,
+            [filter]: { $in: ids }
+        }, { 
+            select: '_id name location schedule', 
+            page, 
+            limit, 
+            populate: { path: 'schedule', select: '_id title shiftTimes' } 
+        })
+            .then(({ docs, ...paginatedResult }) => {
+
+                const employeeIds = docs.map((e) => e._id);
+                resolve({ employees: docs, employeeIds, ...paginatedResult });
             })
             .catch((err) => reject(err));
     });
@@ -93,6 +116,15 @@ const getMetricsByLocation = ({ metrics, locations }) => {
     return metricsByLocation;
 }
 
+const transformOnTimePercentageByLocation = (data) => {
+    const series = [], locations = [];
+    data.forEach((d) => {
+        locations.push(d.location?.name || "Location Not Found");
+        series.push(d.onTimePercentage);
+    })
+    return { series, locations };
+}
+
 const getOnTimePercentageByLocation = async ({ logs, managerId }) => {
     const metrics = getMetricsByEmployees(logs);
 
@@ -110,7 +142,7 @@ const getOnTimePercentageByLocation = async ({ logs, managerId }) => {
         delete m.metrics;
     })
 
-    return metricsByLocation;
+    return transformOnTimePercentageByLocation(metricsByLocation);
 }
 const getMetricsByDate = (logs) => {
     const metricsByDates = {};
@@ -147,6 +179,14 @@ const getMetricsByDate = (logs) => {
     return metricsByDates;
 }
 
+const transformOnTimePercentageByDate = (data) => {
+    const series = [], dates = [];
+    Object.entries(data).forEach(([key, value]) => {
+        dates.push(dayjs(key).format("D MMM"));
+        series.push(value);
+    })
+    return { series, dates };
+}
 
 const getOnTimePercentageByDate = async ({ startDate, endDate, employeeIds }) => {
     const startMonth = startDate.startOf('month').toDate();
@@ -160,19 +200,29 @@ const getOnTimePercentageByDate = async ({ startDate, endDate, employeeIds }) =>
 
     const dates = getDaysArray(startDate.toDate(), endDate.toDate());
 
+    
     const metricsByDate = getMetricsByDate(logs);
 
+
     Object.entries(metricsByDate).forEach(([key, value]) => {
-        const latePercentage = (value.days * 100) / value.entries;
-        const onTimePercentage = 100 - latePercentage;
-        metricsByDate[key] = onTimePercentage;
+        if (dates.includes(key)) {
+            const latePercentage = (value.days * 100) / value.entries;
+            const onTimePercentage = 100 - latePercentage;
+            metricsByDate[key] = onTimePercentage;
+        } else {
+            delete metricsByDate[key];
+        }
     })
+
 
     dates.forEach((day) => {
         if (!metricsByDate[day]) metricsByDate[day] = 0;
     })
 
-    return metricsByDate;
+    // console.log(dates, metricsByDate);
+
+
+    return transformOnTimePercentageByDate(metricsByDate);
 }
 
 const getAttendanceMetricsByEmployees = ({ logs, startDate, endDate }) => {
@@ -231,6 +281,21 @@ const getAttendanceMetricsByEmployees = ({ logs, startDate, endDate }) => {
     return metricsByEmployees;
 }
 
+const transformAttendanceByLocation = (data) => {
+    const present = [], late = [], absent = [], off = [], locations = [];
+    data.forEach((d) => {
+
+        locations.push(d.location?.name || "Location Not Found");
+        const { totalPresents, totalLates, totalOffs, totalAbsents } = d.metrics;
+        present.push(totalPresents);
+        late.push(totalLates);
+        off.push(totalOffs);
+        absent.push(totalAbsents);
+    })
+    return { present, late, absent, off, locations };
+}
+
+
 const getAttendanceByLocation = async ({ managerId, logs, startDate, endDate }) => {
 
     const metrics = await getAttendanceMetricsByEmployees({ logs, startDate, endDate });
@@ -245,12 +310,18 @@ const getAttendanceByLocation = async ({ managerId, logs, startDate, endDate }) 
 
         correspondingMetrics.forEach((m) => delete m.employee);
 
+        // let totalPresents = 0, totalLates = 0, totalOffs = 0, totalAbsents = 0;
 
-        metricsByLocation.push({ location, metrics: correspondingMetrics })
+        const totalPresents = [0, ...correspondingMetrics.map((e) => e.totalPresents)].reduce((a, b) => a + b);
+        const totalLates = [0, ...correspondingMetrics.map((e) => e.totalLates)].reduce((a, b) => a + b);
+        const totalOffs = [0, ...correspondingMetrics.map((e) => e.totalOffs)].reduce((a, b) => a + b);
+        const totalAbsents = [0, ...correspondingMetrics.map((e) => e.totalAbsents)].reduce((a, b) => a + b);
+
+        metricsByLocation.push({ location, metrics: { totalPresents, totalLates, totalOffs, totalAbsents } })
 
     });
 
-    return metricsByLocation;
+    return transformAttendanceByLocation(metricsByLocation);
 }
 
 const getAbsentMetricsByEmployees = ({ logs, startDate, endDate }) => {
@@ -353,4 +424,78 @@ module.exports.getEmployees = catchAsync(async function (req, res, next) {
     const { latePercentage, absentPercentage } = getAbsentPercentage({ logs, startDate, endDate });
 
     res.status(200).json({ onTimePercentageByLocation, onTimePercentageByDate, attendanceByLocation, latePercentage, absentPercentage });
+});
+
+
+module.exports.getSnapshot = catchAsync(async function (req, res, next) {
+    const managerId = res.locals.user._id;
+
+    const { page, limit } = req.query;
+
+    const currentDate = dayjs().utc();
+    const today = currentDate.format('dddd');
+
+    const ids = req.query.ids.split(',');
+
+    const { 
+        employees, 
+        employeeIds, 
+        ...pagination
+    } = await getPaginatedEmployeesByFilter({ 
+        page, 
+        limit, 
+        managerId, 
+        filter: req.params.filter, 
+        ids 
+    });
+
+    const logs = await LoggedHour.find({
+        employee: { $in: employeeIds },
+        createdAt: { $gte: currentDate.startOf('month').format() },
+        lastIn: { $lte: currentDate.endOf('month').format() },
+    })
+        .populate({
+            path: 'employee',
+            select: '_id name location schedule',
+            populate: {
+                path: 'schedule',
+                select: '_id title shiftTimes'
+            }
+        })
+        .populate({
+            path: 'employee',
+            select: '_id name location schedule',
+            populate: {
+                path: 'location',
+                select: '_id name'
+            }
+        })
+        .lean();
+
+    const snapshot = [];
+
+    logs.forEach((log) => {
+        const logOfDay = log.logs[today];
+        const isScheduled = log.employee.schedule?.shiftTimes[today];
+        let status;
+        if (!logOfDay) {
+            if (!isScheduled) status = "Off";
+            else status = "Absent";
+        } else {
+            logOfDay.forEach((entry) => {
+                if (entry.latePunched) status = "Late";
+                else status = "On Time";
+            });
+        }
+
+        const row = {
+            name: log.employee.name,
+            status,
+            location: log.employee.location
+        };
+
+        snapshot.push(row);
+    })
+
+    res.status(200).json({ snapshot, pagination });
 });
