@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
 const _ = require('lodash');
 const Model = require('../models/schedules.model');
+const User = require('../models/users.model');
+
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
-const User = require('../models/users.model');
 const dayjs = require('dayjs');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
@@ -27,6 +28,17 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     res.status(200).json(
         _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
     );
+});
+
+module.exports.getAllByAdmin = catchAsync(async function (req, res, next) {
+    const { page, limit, sort } = req.query;
+
+    const managers = await User.find({ role: 'MANAGER', admin: res.locals.user._id }, '_id').lean();
+    const managerIds = managers.map((e) => e._id);
+
+    const results = await Model.find({ manager: { $in: managerIds } }, '_id title');
+
+    res.status(200).json(results);
 });
 
 module.exports.addOne = catchAsync(async function (req, res, next) {

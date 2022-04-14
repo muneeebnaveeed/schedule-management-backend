@@ -6,8 +6,8 @@ const { authentication, authorization } = require('../middlewares/auth.middlewar
 
 // router.get('/locations', authentication, authorization('MANAGER'), getByLocations);
 // router.get('/schedules', authentication, authorization('MANAGER'), getBySchedules);
-router.get('/filter/:filter', authentication, authorization('MANAGER'), getEmployees);
-router.get('/snapshot/filter/:filter', authentication, authorization('MANAGER'), getSnapshot);
+router.get('/filter/:filter', authentication, authorization('MANAGER', 'ADMIN'), getEmployees);
+router.get('/snapshot/filter/:filter', authentication, authorization('MANAGER', 'ADMIN'), getSnapshot);
 
 
 module.exports = router;

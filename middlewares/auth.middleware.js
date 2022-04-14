@@ -16,10 +16,13 @@ module.exports.authentication = catchAsync(async function (req, res, next) {
             token = req.headers.authorization.split(' ')[1];
     }
 
+
     if (!token) return next(new AppError('Please login to get access', 401));
 
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
     let freshUser;
+
+
 
     const promises = [
         mongoose.model('AdminUser').findById(decoded.id, '-password -__v').lean(),
@@ -52,11 +55,14 @@ module.exports.authentication = catchAsync(async function (req, res, next) {
 
     const [admin, employee, manager] = await Promise.all(promises);
 
+
+
     freshUser = admin ?? employee ?? manager;
 
     if (admin) freshUser.role = 'ADMIN';
     else if (employee) freshUser.role = 'EMPLOYEE';
     else if (manager) freshUser.role = 'MANAGER';
+
 
     if (!freshUser) return next(new AppError('Please login again', 401));
 
