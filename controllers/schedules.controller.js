@@ -19,8 +19,9 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     const employees = await User.find({ role: 'EMPLOYEE', schedule: { $in: scheduleIds } }, 'schedule').lean();
 
     scheduleIds.forEach((id, index) => {
-        const correspondingEmployees = employees.map((e) => {
-            if (e.schedule.toString() === id.toString()) return e._id;
+        const correspondingEmployees = [];
+        employees.map((e) => {
+            if (e.schedule.toString() === id.toString()) correspondingEmployees.push(e._id);
         });
         results.docs[index].employees = correspondingEmployees;
     });
@@ -60,8 +61,17 @@ module.exports.edit = catchAsync(async function (req, res, next) {
 
     const body = _.pick(req.body, ['color', 'title', 'shiftTimes', 'employees']);
 
+    const allScheduledEmployees = await User.find({ role: "EMPLOYEE", schedule: id }, '_id').lean();
+    const selectedEmployees = body.employees.map((e) => e._id);
+    const deScheduledEmployees = allScheduledEmployees.filter((e) => !selectedEmployees.includes(e._id.toString())).map((e) => e._id.toString());
+
+    console.log(allScheduledEmployees, selectedEmployees, deScheduledEmployees);
+
     await Model.findByIdAndUpdate(id, body, { runValidators: true });
-    await User.updateMany({ _id: { $in: body.employees } }, { schedule: id, isScheduleAssigned: true });
+    await Promise.all([
+        User.updateMany({ _id: { $in: selectedEmployees } }, { schedule: id, isScheduleAssigned: true }),
+        User.updateMany({ _id: { $in: deScheduledEmployees } }, { schedule: null, isScheduleAssigned: false })
+    ]);
 
     res.status(200).json();
 });
@@ -103,8 +113,10 @@ module.exports.remove = catchAsync(async function (req, res, next) {
 
     ids = ids.map((id) => mongoose.Types.ObjectId(id));
 
-    await Model.deleteMany({ _id: { $in: ids } });
-    await User.updateMany({ schedule: { $in: ids } }, { $unset: { schedule: '' }, isScheduleAssigned: false });
+    await Promise.all([
+        Model.deleteMany({ _id: { $in: ids } }),
+        User.updateMany({ schedule: { $in: ids } }, { schedule: null, isScheduleAssigned: false })
+    ]);
 
     res.status(200).json();
 });

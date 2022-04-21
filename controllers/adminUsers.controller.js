@@ -296,14 +296,19 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
 `;
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
-    const { page, limit, sort = { _id: 1 }, search, filters, untaggedOnly = false } = req.query;
+    const { page, limit, sort = { _id: 1 }, search, filters, untaggedOnly = false, includeTag } = req.query;
 
     const additionalQuery = {};
 
     if (res.locals.user.admin && filters.length === 1 && filters[0] === 'EMPLOYEE')
         additionalQuery.manager = res.locals.user._id;
 
-    if (untaggedOnly == 'true') additionalQuery.tag = null;
+    const tagQuery = {  };
+
+    if (untaggedOnly == 'true' || includeTag) tagQuery.$or = [];
+
+    if (untaggedOnly == 'true') tagQuery.$or.push({ tag: null });
+    if (includeTag) tagQuery.$or.push({ tag: includeTag });
 
     const results = await mongoose.model('User').paginate(
         {
@@ -319,6 +324,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                     admin: res.locals.user.admin?._id || res.locals.user._id,
                     ...additionalQuery,
                 },
+                { ...tagQuery }
             ],
         },
         {

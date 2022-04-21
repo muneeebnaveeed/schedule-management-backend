@@ -13,12 +13,21 @@ const getLocationsByManager = async (managerId) => {
             .populate({ path: 'location', select: 'name _id' })
             .lean();
 
-        const locationIds = [...new Set(assignedEmployees.map((e) => e.location?._id.toString()))];
+        const locationIds = [];
+
+        assignedEmployees.forEach((e) => {
+            const locationId = e.location?._id.toString();
+            if (locationId) locationIds.push(locationId);
+        })
+
+        const uniqueLocationIds = [...new Set()];
 
         const locations = [];
 
-        locationIds.forEach((id) => {
-            let employee = assignedEmployees.find((employee) => employee.location?._id.toString() === id.toString());
+        uniqueLocationIds.forEach((id) => {
+            let employee = assignedEmployees.find((employee) => {
+                return employee.location?._id.toString() === id.toString();
+            });
             if (employee) locations.push(employee.location);
         });
 

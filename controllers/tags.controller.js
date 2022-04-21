@@ -18,8 +18,6 @@ module.exports.addOne = catchAsync(async function (req, res, next) {
 
     const createdTag = await Model.create({ ...doc, manager: res.locals.user._id });
 
-    console.log(doc.employees);
-
     await User.updateMany({ role: 'EMPLOYEE', _id: { $in: doc.employees } }, { tag: createdTag._id });
 
     res.status(200).json();
@@ -40,8 +38,10 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     const employees = await User.find({ role: 'EMPLOYEE', tag: { $in: tagIds } }, '_id tag').lean();
 
     tagIds.forEach((id, index) => {
-        const correspondingEmployees = employees.map((e) => {
-            if (e.tag.toString() === id.toString()) return e._id;
+        const correspondingEmployees = [];
+        employees.forEach((e) => {
+            if (e.tag?.toString() === id.toString())
+                correspondingEmployees.push(e._id);
         });
         results.docs[index].employees = correspondingEmployees;
     });
@@ -61,6 +61,7 @@ module.exports.remove = catchAsync(async function (req, res, next) {
     ids = ids.map((id) => mongoose.Types.ObjectId(id));
 
     await Model.deleteMany({ _id: { $in: ids } });
+    await User.updateMany({ tag: { $in: ids } }, { tag: null });
 
     res.status(200).json();
 });
@@ -74,9 +75,15 @@ module.exports.edit = catchAsync(async function (req, res, next) {
 
     if (doc.employees.length < 1) return next(new AppError('Please assign employees to the tag', 400));
 
+    
     const tag = await Model.findById(id, '_id').lean();
+    const allTaggedEmployeees = await User.find({ role: "EMPLOYEE", tag: tag._id.toString() }, '_id').lean();
+    const detaggedEmployees = allTaggedEmployeees.filter((e) => !doc.employees.includes(e._id.toString())).map((e) => e._id.toString());
 
-    await User.updateMany({ _id: { $in: doc.employees } }, { $push: { tags: tag._id.toString() } });
+    await Promise.all([
+        User.updateMany({ _id: { $in: detaggedEmployees } }, { tag: null }),
+        User.updateMany({ _id: { $in: doc.employees } }, { tag: tag._id.toString() })
+    ]);
 
     res.status(200).json();
 });
