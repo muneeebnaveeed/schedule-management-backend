@@ -227,7 +227,7 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
                 <td align="center" data-border-radius-default="0,6,36" data-border-radius-custom="Buttons" data-bgcolor="Buttons" bgcolor="#277ffe" style="border-radius: 0px; background-color: #277ffe !important;">
          
                     <singleline>
-                      <a href="https://fyz-schedule-management.herokuapp.com/accept-manager-invitation?token=${token}" target="_blank" mc:edit data-button data-text-style="Buttons" style="font-family:'Barlow',Arial,Helvetica,sans-serif;font-size:16px;line-height:20px;font-weight:700;font-style:normal;color:#FFFFFF;text-decoration:none;letter-spacing:0px;padding: 15px 35px 15px 35px;display: inline-block;"><span>REGISTER</span></a>
+                      <a href="${process.env.FRONTEND_URL}/accept-manager-invitation?token=${token}" target="_blank" mc:edit data-button data-text-style="Buttons" style="font-family:'Barlow',Arial,Helvetica,sans-serif;font-size:16px;line-height:20px;font-weight:700;font-style:normal;color:#FFFFFF;text-decoration:none;letter-spacing:0px;padding: 15px 35px 15px 35px;display: inline-block;"><span>REGISTER</span></a>
                     </singleline>
                  
                 </td>
