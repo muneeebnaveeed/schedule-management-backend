@@ -7,8 +7,6 @@ const schema = new mongoose.Schema({
         type: String,
         required: [true, 'Please enter a name'],
         maxlength: [25, 'Only 25 characters are allowed in location name'],
-        unique: true,
-        uniqueCaseInsensitive: true,
     },
     coordinates: {
         type: {

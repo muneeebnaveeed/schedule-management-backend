@@ -8,7 +8,6 @@ const AppError = require('../utils/AppError');
 
 const getLocationsByManager = async (managerId) => {
     try {
-
         const assignedEmployees = await User.find({ role: 'EMPLOYEE', manager: managerId }, 'location')
             .populate({ path: 'location', select: 'name _id' })
             .lean();
@@ -18,7 +17,7 @@ const getLocationsByManager = async (managerId) => {
         assignedEmployees.forEach((e) => {
             const locationId = e.location?._id.toString();
             if (locationId) locationIds.push(locationId);
-        })
+        });
 
         const uniqueLocationIds = [...new Set()];
 
@@ -31,12 +30,11 @@ const getLocationsByManager = async (managerId) => {
             if (employee) locations.push(employee.location);
         });
 
-
         return locations;
     } catch (error) {
         throw error;
     }
-}
+};
 
 module.exports.getLocationsByManager = getLocationsByManager;
 
@@ -60,6 +58,12 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     res.status(200).json(
         _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
     );
+});
+
+module.exports.getUnpaginated = catchAsync(async function (req, res, next) {
+    const results = await Model.find({ admin: res.locals.user._id });
+
+    res.status(200).json(results);
 });
 
 module.exports.getAllByManager = catchAsync(async function (req, res, next) {

@@ -50,7 +50,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
         .model('User')
         .findOne(
             { email: body.email, role: 'EMPLOYEE' },
-            'name email password isConfirmed isPasswordSet location schedule',
+            'name email password isConfirmed isPasswordSet location schedule'
         )
         .populate({ path: 'manager', select: 'name' })
         .populate({ path: 'location', select: 'name coordinates' });
@@ -59,7 +59,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
     const isValidPassword = await user.isValidPassword(body.password, user.password);
 
     if (!isValidPassword) return next(new AppError('Invalid email or password', 401));
-    if (!user.isConfirmed || !user.schedule) return next(new AppError('Your Access is pending', 403));
+    // if (!user.isConfirmed || !user.schedule) return next(new AppError('Your Access is pending', 403));
 
     const token = signToken({ id: user._id });
 
@@ -96,11 +96,11 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
             page,
             limit,
             sort: { isConfirmed: 1, ...sort },
-        },
+        }
     );
 
     res.status(200).json(
-        _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter']),
+        _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
     );
 });
 

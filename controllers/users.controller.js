@@ -13,11 +13,15 @@ const Model = require('../models/adminUsers.model');
 const User = require('../models/users.model');
 const Tag = require('../models/tag.model');
 
+const Utils = require('../utils');
+
 const { catchAsync } = require('./errors.controller');
 const AppError = require('../utils/AppError');
 
 module.exports.getAll = catchAsync(async function (req, res, next) {
-    const { page, limit, sort = { _id: 1 }, search, filters } = req.query;
+    const { page, limit, sort = { _id: 1 }, search, filter = 'manager,employee' } = req.query;
+
+    const filters = filter.toUpperCase().split(',');
 
     const results = await mongoose.model('User').paginate(
         {
@@ -47,9 +51,19 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
         }
     );
 
-    res.status(200).json(
-        _.pick(results, ['docs', 'totalDocs', 'hasPrevPage', 'hasNextPage', 'totalPages', 'pagingCounter'])
-    );
+    res.status(200).json(Utils.getPaginatedResults(results));
+});
+
+module.exports.unpaginatedManagers = catchAsync(async function (req, res, next) {
+    const managers = await mongoose
+        .model('User')
+        .find({
+            role: 'MANAGER',
+            admin: res.locals.user._id,
+        })
+        .lean();
+
+    res.status(200).json(managers);
 });
 
 module.exports.remove = catchAsync(async function (req, res, next) {

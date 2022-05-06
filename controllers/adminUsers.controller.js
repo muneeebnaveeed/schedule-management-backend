@@ -303,7 +303,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
     if (res.locals.user.admin && filters.length === 1 && filters[0] === 'EMPLOYEE')
         additionalQuery.manager = res.locals.user._id;
 
-    const tagQuery = {  };
+    const tagQuery = {};
 
     if (untaggedOnly == 'true' || includeTag) tagQuery.$or = [];
 
@@ -324,7 +324,7 @@ module.exports.getAll = catchAsync(async function (req, res, next) {
                     admin: res.locals.user.admin?._id || res.locals.user._id,
                     ...additionalQuery,
                 },
-                { ...tagQuery }
+                { ...tagQuery },
             ],
         },
         {
@@ -426,6 +426,7 @@ module.exports.importEmployees = catchAsync(async function (req, res, next) {
         }
         groups = groups.map((id) => mongoose.Types.ObjectId(id));
     }
+
     const employees = await csv().fromString(req.file.buffer.toString());
     const managerEmails = [];
     employees.forEach((e) => {
