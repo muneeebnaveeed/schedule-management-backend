@@ -63,7 +63,7 @@ module.exports.loginUser = catchAsync(async function (req, res, next) {
 
     const token = signToken({ id: user._id });
 
-    const filteredUser = _.pick(user, ['_id', 'name', 'email', 'isPasswordSet', 'manager', 'location']);
+    const filteredUser = _.pick(user, ['_id', 'name', 'email', 'isPasswordSet', 'manager', 'location', 'schedule']);
 
     const monthlyLog = await LoggedHour.findOne({
         month: dayjs().utc().format('M-YYYY'),
